@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from "react";
 import { BACKEND_URL } from "./config.js";
 import RadialCanvas from "./RadialCanvas.jsx";
 import LyricsPlayer from "./LyricsPlayer.jsx";
+import VideoClipPlayer from "./VideoClipPlayer.jsx";
 import ScoreReceipt from "./ScoreReceipt.jsx";
 import { CharacterChip } from "./CharacterGlyph.jsx";
 import { characterIndexFor, styleFor } from "./characters.js";
@@ -13,6 +14,16 @@ const PHASE_LABELS = {
   ranking: "Cross-episode ranking",
   complete: "Done",
 };
+
+// The real stages an uploaded video goes through server-side — mirrors
+// ClipCut's analyze flow so the user can watch the clipping happen.
+const UPLOAD_STEPS = [
+  { title: "Reading video", detail: "Receiving the uploaded MP4" },
+  { title: "Extracting audio", detail: "Pulling the audio track for transcription" },
+  { title: "Transcribing speech", detail: "faster-whisper (small model) → transcript" },
+  { title: "Scoring promo windows", detail: "Hook / cliffhanger / emotion heuristic" },
+  { title: "Ranking best clips", detail: "Picking and ordering the top promos" },
+];
 
 function uniqueSpeakers(promo) {
   if (!promo?.transcript) return [];
@@ -40,9 +51,19 @@ export default function App() {
   const [selectedPromo, setSelectedPromo] = useState(null);
   const [sortDir, setSortDir] = useState("desc");
   const [panelOpen, setPanelOpen] = useState(false);
+  const [railOpen, setRailOpen] = useState(true);
+  const [detailCollapsed, setDetailCollapsed] = useState(false);
+  const [tutorialOn, setTutorialOn] = useState(true);
+  // Video-upload step flow (ClipCut-style). -1 = inactive; otherwise the
+  // index of the stage currently in progress.
+  const [uploadStage, setUploadStage] = useState(-1);
   const [viewLevel, setViewLevel] = useState({ level: "overview" });
   const [youtubeUrl, setYoutubeUrl] = useState("");
   const [mp4File, setMp4File] = useState(null);
+  // Blob URL for the uploaded video, kept so the detail panel can play the
+  // real footage of each ranked clip. Only set for MP4 uploads; null for
+  // script/YouTube runs (which have no local video to show).
+  const [sourceVideoUrl, setSourceVideoUrl] = useState(null);
   const animRef = useRef(null);
   const canvasRef = useRef(null);
 
@@ -85,6 +106,9 @@ export default function App() {
     setPhase("idle");
     setPhaseProgress(0);
     setViewLevel({ level: "overview" });
+    // Drop any previous video — script/YouTube runs have no footage, and a
+    // new upload replaces the old blob. Revoke so we don't leak object URLs.
+    setSourceVideoUrl((prev) => { if (prev) URL.revokeObjectURL(prev); return null; });
   }
 
   async function runPipeline() {
@@ -140,6 +164,18 @@ export default function App() {
       return;
     }
     resetRun();
+    // Walk the ClipCut-style stages while the request is in flight. These are
+    // the real server-side steps; we advance them on a timer and hold at the
+    // last pre-final stage until the response actually arrives, so the flow
+    // is representative without needing a streaming backend.
+    setUploadStage(0);
+    // Transcription (step index 2) is the real bottleneck — hold the flow
+    // there, spinning, until the response lands, then fast-forward the quick
+    // scoring/judging/ranking steps. Keeps the progress honest.
+    const holdAt = 2;
+    const stepTimer = setInterval(() => {
+      setUploadStage((s) => (s < holdAt ? s + 1 : s));
+    }, 800);
     try {
       const form = new FormData();
       form.append("file", mp4File);
@@ -153,9 +189,28 @@ export default function App() {
       }
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error || `Backend returned ${res.status}`);
-      setData(json);
-      runAnimatedPhases(json);
+      if (!json.promo_count) {
+        throw new Error(
+          json.unit_count
+            ? `Transcribed ${json.unit_count} lines, but none formed a 15–60s promo window with a strong hook and cliffhanger. Try a longer clip with a clear dramatic beat.`
+            : "No speech could be transcribed from that video — it may be silent, music-only, or not in English."
+        );
+      }
+      clearInterval(stepTimer);
+      setUploadStage(UPLOAD_STEPS.length); // all steps done
+      // Keep the actual footage around so the detail panel can play each
+      // ranked clip. The file never left the browser — this is the same
+      // bytes we uploaded, now addressable as a <video> source.
+      setSourceVideoUrl(URL.createObjectURL(mp4File));
+      // brief beat so the user sees the final "clips ready" tick, then reveal
+      setTimeout(() => {
+        setUploadStage(-1);
+        setData(json);
+        runAnimatedPhases(json);
+      }, 700);
     } catch (e) {
+      clearInterval(stepTimer);
+      setUploadStage(-1);
       setError(e.message || "Couldn't transcribe that file.");
       setStatus("error");
       setPhase("idle");
@@ -165,6 +220,7 @@ export default function App() {
   function handleSelectPromo(promo) {
     setSelectedPromo(promo);
     setPanelOpen(!!promo);
+    if (promo) setDetailCollapsed(false);
   }
 
   function handleViewLevelChange(v) {
@@ -172,6 +228,7 @@ export default function App() {
     if (v.level === "sunflower" && v.promo) {
       setSelectedPromo(v.promo);
       setPanelOpen(true);
+      setDetailCollapsed(false);
     } else if (v.level !== "sunflower") {
       setPanelOpen(false);
     }
@@ -194,8 +251,24 @@ export default function App() {
   const activeCharIndex = selectedPromo ? characterIndexFor(selectedPromo.episode, activeCells) : null;
   const activeSpeakers = uniqueSpeakers(selectedPromo);
 
+  const railVisible = !!(data && status === "ready" && railOpen);
+  const detailVisible = !!(panelOpen && selectedPromo && !detailCollapsed);
+
+  // Guided walkthrough — the hint changes with how far the user has drilled
+  // in, matching the exact flow: pick a top-5 circle → read the big score and
+  // click the cell → open the promo → hit Play.
+  const TUTORIAL_HINTS = {
+    overview: { step: 1, text: "The top 5 episodes are ringed in orange and numbered #1–#5. Click one of those circles to zoom in." },
+    episode: { step: 2, text: "The card beside the grid lists this episode's clips and scores. Click a glowing (pulsing) cell to open its promo." },
+    sunflower: { step: 3, text: "The promo opened in the panel on the right. Press ▶ Play to watch the dialogue run through it." },
+  };
+  const tutorialHint = TUTORIAL_HINTS[viewLevel.level];
+
   return (
-    <div className={`shell ${panelOpen ? "panel-open" : ""}`}>
+    <div
+      className="shell"
+      style={{ gridTemplateColumns: `1fr ${detailVisible ? 380 : 0}px ${railVisible ? 340 : 0}px` }}
+    >
       <nav className="nav">
         <div className="brand">
           KUKU <span className="hot">PROMO FINDER</span>
@@ -232,6 +305,42 @@ export default function App() {
           </div>
         )}
 
+        {status === "ready" && tutorialOn && tutorialHint && (
+          <div className="coachmark">
+            <div className="coachmark-step">Step {tutorialHint.step} of 3</div>
+            <div className="coachmark-text">{tutorialHint.text}</div>
+            <button className="coachmark-close" onClick={() => setTutorialOn(false)} aria-label="Dismiss">✕</button>
+          </div>
+        )}
+        {status === "ready" && !tutorialOn && (
+          <button className="coachmark-reopen" onClick={() => setTutorialOn(true)} title="Show the guide">?</button>
+        )}
+
+        {uploadStage >= 0 && (
+          <div className="upload-progress-backdrop">
+            <div className="upload-progress">
+              <div className="upload-progress-title">Cutting clips from your video</div>
+              <div className="upload-steps">
+                {UPLOAD_STEPS.map((step, i) => {
+                  const state = i < uploadStage ? "done" : i === uploadStage ? "active" : "pending";
+                  return (
+                    <div className={`upload-step ${state}`} key={i}>
+                      <span className="upload-step-dot">
+                        {state === "done" ? "✓" : state === "active" ? <span className="spin-ring" /> : i + 1}
+                      </span>
+                      <span className="upload-step-body">
+                        <span className="upload-step-title">{step.title}</span>
+                        <span className="upload-step-detail">{step.detail}</span>
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+              {mp4File && <div className="upload-progress-file">{mp4File.name}</div>}
+            </div>
+          </div>
+        )}
+
         <div className="hud-overlay">
           <div className="hud-left">
             <p className="hud-desc">
@@ -254,93 +363,36 @@ export default function App() {
 
         <div className="control-dock">
           <div className="input-row">
-            <button
-              className={`input-card ${mode === "script" ? "active" : ""}`}
-              onClick={() => setMode("script")}
-            >
+            <button className="input-card active">
               <h3>Script folder</h3>
               <p>50 bundled episodes — parsed server-side.</p>
             </button>
-            <button
-              className={`input-card ${mode === "youtube" ? "active" : ""}`}
-              onClick={() => setMode("youtube")}
-            >
-              <h3>YouTube link</h3>
-              <p>Scores the video's own captions — no audio download needed.</p>
-            </button>
-            <button
-              className={`input-card ${mode === "upload" ? "active" : ""}`}
-              onClick={() => setMode("upload")}
-            >
-              <h3>Upload MP4</h3>
-              <p>Real transcription via faster-whisper — local backend only.</p>
-            </button>
           </div>
 
-          {mode === "script" && (
-            <button className="btn btn-primary btn-run" onClick={runPipeline} disabled={status === "loading"}>
-              {status === "loading" ? "Running pipeline…" : "Run pipeline on 50 episodes"}
-            </button>
-          )}
-
-          {mode === "youtube" && (
-            <div className="mode-fallback">
-              <div className="mode-row">
-                <input
-                  className="mode-input"
-                  placeholder="https://www.youtube.com/watch?v=..."
-                  value={youtubeUrl}
-                  onChange={(e) => setYoutubeUrl(e.target.value)}
-                  disabled={status === "loading"}
-                />
-                <button className="btn btn-primary" onClick={runYoutube} disabled={status === "loading"}>
-                  {status === "loading" ? "Scoring…" : "Score video"}
-                </button>
-              </div>
-              <div className="mode-note">
-                Fetches the video's own caption track (auto or uploaded) via yt-dlp and runs the
-                same promo scorer against it — no Whisper, no video download, so it fits inside a
-                serverless function. Needs the video to actually have English captions.
-              </div>
-            </div>
-          )}
-
-          {mode === "upload" && (
-            <div className="mode-fallback">
-              <div className="mode-row">
-                <input
-                  className="mode-input"
-                  type="file"
-                  accept="video/mp4"
-                  onChange={(e) => setMp4File(e.target.files?.[0] || null)}
-                  disabled={status === "loading"}
-                />
-                <button className="btn btn-primary" onClick={runUpload} disabled={status === "loading"}>
-                  {status === "loading" ? "Transcribing…" : "Score video"}
-                </button>
-              </div>
-              <div className="mode-note">
-                {mp4File ? `Selected: ${mp4File.name}. ` : ""}
-                Transcribes with faster-whisper (CPU, "tiny" model) and scores the result the same
-                way the script pipeline does. Capped at 20 minutes of video — long enough for this
-                tool's own 20–60s promo windows, short enough not to exhaust memory on a non-GPU
-                machine. Only works against a locally running backend (see README) — Vercel's
-                serverless functions can't host a persistent model process.
-              </div>
-            </div>
-          )}
+          <button className="btn btn-primary btn-run" onClick={runPipeline} disabled={status === "loading"}>
+            {status === "loading" ? "Scoring + AI judging…" : "Run pipeline on 50 episodes"}
+          </button>
+          <div className="mode-note">
+            Heuristic scores every clip, then an AI judge (Qwen) re-scores the top ones —
+            total = heuristic + AI — and cuts before the reveal. No key ⇒ heuristic-only.
+          </div>
 
           {status === "error" && <div className="error-box">{error}</div>}
         </div>
       </div>
 
-      {data && status === "ready" && (
+      {railVisible && (
         <div className="rail">
           <div className="rail-header">
             <span>Ranked promos</span>
-            <button className="sort-toggle" onClick={() => setSortDir((d) => (d === "desc" ? "asc" : "desc"))}>
-              {sortDir === "desc" ? "Highest ↓" : "Lowest ↑"}
-            </button>
+            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+              <button className="sort-toggle" onClick={() => setSortDir((d) => (d === "desc" ? "asc" : "desc"))}>
+                {sortDir === "desc" ? "Highest ↓" : "Lowest ↑"}
+              </button>
+              <button className="sidebar-collapse-btn" onClick={() => setRailOpen(false)} title="Collapse ranked promos">
+                ⟩⟩
+              </button>
+            </div>
           </div>
           <div className="rail-list">
             {sortedPromos.map((p, idx) => (
@@ -361,9 +413,29 @@ export default function App() {
         </div>
       )}
 
-      {panelOpen && selectedPromo && (
+      {!railVisible && data && status === "ready" && (
+        <button className="sidebar-reopen-tab rail-reopen" onClick={() => setRailOpen(true)}>
+          Promos ‹
+        </button>
+      )}
+      {panelOpen && selectedPromo && detailCollapsed && (
+        <button className="sidebar-reopen-tab detail-reopen" onClick={() => setDetailCollapsed(false)}>
+          Clip ‹
+        </button>
+      )}
+
+      {detailVisible && (
         <div className="detail-column">
-          <LyricsPlayer promo={selectedPromo} charIndex={activeCharIndex} />
+          <div className="detail-column-header">
+            <button className="sidebar-collapse-btn" onClick={() => setDetailCollapsed(true)} title="Collapse this panel">
+              ⟩⟩
+            </button>
+          </div>
+          {sourceVideoUrl ? (
+            <VideoClipPlayer promo={selectedPromo} src={sourceVideoUrl} charIndex={activeCharIndex} />
+          ) : (
+            <LyricsPlayer promo={selectedPromo} charIndex={activeCharIndex} />
+          )}
 
           <ScoreReceipt promo={selectedPromo} />
 

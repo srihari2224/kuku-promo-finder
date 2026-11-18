@@ -28,7 +28,7 @@ export default function CharacterGlyph({ style, size = 14, selected = false }) {
         y={size / 2 + 0.5}
         textAnchor="middle"
         dominantBaseline="central"
-        fontSize={size * 0.58}
+        fontSize={size * (String(style.glyph).length > 1 ? 0.42 : 0.58)}
         fontWeight={700}
         fontFamily="'Recursive', system-ui"
         fill={selected ? "#13120e" : style.color}

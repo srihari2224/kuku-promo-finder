@@ -15,7 +15,12 @@ from http.server import BaseHTTPRequestHandler
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "pipeline"))
 from captions import cues_to_units, parse_vtt  # noqa: E402
-from scorer import build_episode_cells, find_promos  # noqa: E402
+from scorer import apply_judgment, build_episode_cells, find_promos  # noqa: E402
+
+try:
+    from ai_judge import get_judge  # noqa: E402
+except Exception:  # pragma: no cover
+    get_judge = lambda: None  # noqa: E731
 
 import yt_dlp  # noqa: E402
 
@@ -112,6 +117,7 @@ class handler(BaseHTTPRequestHandler):
         cues = parse_vtt(vtt_text)
         units = cues_to_units(cues, source_id="youtube")
         promos, cands = find_promos(units, "youtube", cap=top_n)
+        promos = apply_judgment(units, promos, "youtube", judge=get_judge())
         cells = build_episode_cells(units, promos, cands)
 
         self._respond({

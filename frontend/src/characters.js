@@ -26,6 +26,33 @@ function normalize(name) {
   return String(name).trim().toUpperCase();
 }
 
+// Pick a short glyph that distinguishes this name from the ones already
+// assigned. name[0] alone collides badly — "LADY JULIANA" and "LADY IN
+// GOLD GOWN" both yield "L". So: try the first letter of the last word,
+// then two-word initials, then first two letters, then fall back to a
+// numbered tag so two characters never share a glyph.
+function pickGlyph(name, taken) {
+  const words = name.split(/\s+/).filter(Boolean);
+  const candidates = [];
+  if (words.length) {
+    candidates.push(words[0][0]);                       // first initial
+    candidates.push(words[words.length - 1][0]);        // last-word initial
+    if (words.length >= 2) candidates.push(words[0][0] + words[words.length - 1][0]); // first+last
+    candidates.push(name.slice(0, 2));                  // first two chars
+    candidates.push(words[0].slice(0, 2));
+  }
+  for (const g of candidates) {
+    if (g && !taken.has(g)) { taken.add(g); return g; }
+  }
+  // Last resort: first initial + a disambiguating count.
+  let n = 2;
+  const base = (words[0]?.[0]) || "·";
+  while (taken.has(base + n)) n++;
+  const g = base + n;
+  taken.add(g);
+  return g;
+}
+
 export function buildCharacterIndex(cells) {
   const order = [];
   const seen = new Set();
@@ -36,11 +63,12 @@ export function buildCharacterIndex(cells) {
     order.push(n);
   }
   const index = {};
+  const takenGlyphs = new Set();
   order.forEach((name, i) => {
     index[name] = {
       name,
       color: PALETTE[i % PALETTE.length],
-      glyph: name[0] || "·",
+      glyph: pickGlyph(name, takenGlyphs),
       order: i,
     };
   });

@@ -142,7 +142,21 @@ function buildLayout(data) {
     }
   }
 
-  return { episodes, connections };
+  // Top 5 episodes — the distinct episodes that own the best clips, in
+  // ranked order. Their circles get the persistent highlight (no per-clip
+  // gold marker anymore), so the editor sees at a glance which handful of
+  // episodes to pull from.
+  const top5 = [];
+  for (const p of data.promos) {
+    const en = parseInt(p.episode, 10);
+    if (!top5.includes(en)) top5.push(en);
+    if (top5.length >= 5) break;
+  }
+  episodes.forEach((ep) => {
+    ep.top5Rank = top5.indexOf(parseInt(ep.id, 10)); // 0..4, or -1
+  });
+
+  return { episodes, connections, top5 };
 }
 
 function buildIdleLayout(episodeCount) {
@@ -178,6 +192,7 @@ const RadialCanvas = forwardRef(function RadialCanvas(
 ) {
   const canvasRef = useRef(null);
   const svgRef = useRef(null);
+  const cardRef = useRef(null);
   const stateRef = useRef({
     camera: { x: 0, y: 0, zoom: 0.5, targetX: 0, targetY: 0, targetZoom: 0.5 },
     layout: null, hovered: { ep: -1, cellEp: -1, cellIdx: -1 },
@@ -293,7 +308,7 @@ const RadialCanvas = forwardRef(function RadialCanvas(
       svg.innerHTML = accepted.map((l) => (
         `<text x="${l.x.toFixed(1)}" y="${l.y.toFixed(1)}" font-size="${l.fontSize}" ` +
         `font-weight="${l.weight || 400}" text-anchor="${l.align || "left"}" ` +
-        `dominant-baseline="middle" fill="${l.color}" opacity="${l.opacity ?? 1}" ` +
+        `dominant-baseline="central" fill="${l.color}" opacity="${l.opacity ?? 1}" ` +
         `font-family="Recursive,system-ui">${l.text}</text>`
       )).join("");
       labelQueue = [];
@@ -489,13 +504,18 @@ const RadialCanvas = forwardRef(function RadialCanvas(
           }
         });
 
-        // Per-episode score badges — one per picked promo, placed near
-        // the hook cell of that promo so the number is anchored to the
-        // actual line it represents, not the strip centroid.
+        // Per-episode score badges. Shown for the top-5 episodes (so their
+        // scores are always visible) and for whichever episode is hovered;
+        // everything else stays an unlabeled colored cell so the grid reads
+        // clean. No per-clip marker — the highlight lives on the episode
+        // circle instead (drawEpisodeNodes).
         if (zoom > 0.3) {
+          const isTop5 = ep.top5Rank >= 0;
           ep.promos.forEach((promo) => {
             const i = promo.receipt?.hook_line_index;
             if (i == null || !ep.cells[i]) return;
+            if (!isEpHot && !isTop5) return;
+
             const cell = ep.cells[i];
             const s = w2s(cell.wx, cell.wy);
             const lx = s.x + ep.angle_cos * 12 * zoom;
@@ -504,8 +524,29 @@ const RadialCanvas = forwardRef(function RadialCanvas(
               x: lx, y: ly, text: promo.score, align: "center",
               fontSize: Math.max(10, 12 * Math.min(zoom, 1.3)), weight: 700,
               color: isEpHot ? HOT : DIM,
-              priority: isEpHot ? 950 : 100 + promo.score,
+              priority: isEpHot ? 950 : (isTop5 ? 700 : 500),
             });
+          });
+        }
+
+        // Zoomed into THIS episode → pulse a ring on each promo's hook cell as
+        // a "click me" cue. All the TEXT (episode, timestamps, scores, the
+        // click instruction) now lives in the HTML info card beside the grid
+        // (updateEpisodeCard) so nothing overlaps the cells anymore.
+        if (st.viewLevel === "episode" && st.focusEp === ci && ep.promos.length) {
+          const cellSz = Math.max(DOT_SIZE * zoom, 2);
+          const pulse = 7 + 4 * Math.sin(performance.now() / 300);
+          ep.promos.forEach((promo) => {
+            const hi = promo.receipt?.hook_line_index;
+            if (hi == null || !ep.cells[hi]) return;
+            const s = w2s(ep.cells[hi].wx, ep.cells[hi].wy);
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, cellSz + pulse, 0, TWO_PI);
+            ctx.strokeStyle = "rgba(255,106,61,0.95)";
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+            ctx.restore();
           });
         }
 
@@ -536,8 +577,22 @@ const RadialCanvas = forwardRef(function RadialCanvas(
         const shouldFade = st.hovered.ep >= 0 && !isHot;
         const isIdle = st.phase === "idle";
         const zoomedHere = st.viewLevel === "episode" && st.focusEp === ci;
+        const isTop5 = ep.top5Rank >= 0;      // one of the 5 best episodes
+        const accent = isHot || zoomedHere || isTop5;
 
         ctx.globalAlpha = isIdle ? 0.3 : (shouldFade ? 0.2 : 1);
+
+        // Persistent soft glow behind the top-5 episode circles so they read
+        // as "the ones to pull from" at a glance, even without hovering.
+        if (isTop5 && !isIdle && !shouldFade) {
+          const grad = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, r * 2.4);
+          grad.addColorStop(0, "rgba(255,106,61,0.22)");
+          grad.addColorStop(1, "transparent");
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, r * 2.4, 0, TWO_PI);
+          ctx.fill();
+        }
 
         if ((isHot || zoomedHere) && st.camera.zoom > 0.25) {
           const sectorAngle = (TWO_PI / totalEps) * 0.82;
@@ -557,8 +612,12 @@ const RadialCanvas = forwardRef(function RadialCanvas(
         ctx.arc(s.x, s.y, r, 0, TWO_PI);
         ctx.fillStyle = BG;
         ctx.fill();
-        ctx.lineWidth = isHot || zoomedHere ? 2.5 : 1.5;
-        ctx.strokeStyle = isHot || zoomedHere ? HOT : (ep.promoCount > 0 ? "rgba(239,230,208,0.55)" : "#322f25");
+        ctx.lineWidth = isHot || zoomedHere ? 2.5 : isTop5 ? 2.5 : 1.5;
+        ctx.strokeStyle = isHot || zoomedHere
+          ? HOT
+          : isTop5
+            ? "rgba(255,106,61,0.9)"
+            : (ep.promoCount > 0 ? "rgba(239,230,208,0.55)" : "#322f25");
         ctx.stroke();
 
         const ir = r * 0.72;
@@ -582,15 +641,27 @@ const RadialCanvas = forwardRef(function RadialCanvas(
           const fSize = Math.max(7, Math.min(12, 13 * st.camera.zoom));
           queueLabel({
             x: s.x, y: s.y, align: "center", fontSize: fSize, weight: 600,
-            color: isHot ? HOT : INK,
+            color: isHot || isTop5 ? HOT : INK,
             text: ep.id.length > 3 ? ep.id.slice(0, 6).toUpperCase() : `EP${ep.id}`,
             priority: 800, skipCollision: true,
           });
         }
 
-        // Full label + score summary only on hover/focus — keeps the
-        // overview from turning into a wall of overlapping text.
-        if ((isHot || zoomedHere) && st.camera.zoom > 0.2) {
+        // Rank badge (#1..#5) pinned to the top-right of a top-5 circle.
+        if (isTop5 && st.camera.zoom > 0.16) {
+          const off = r * 0.78;
+          queueLabel({
+            x: s.x + off, y: s.y - off, align: "center",
+            fontSize: Math.max(8, 10 * st.camera.zoom), weight: 700,
+            color: HOT, text: `#${ep.top5Rank + 1}`,
+            priority: 900, skipCollision: true,
+          });
+        }
+
+        // Full label + score summary on hover only. When zoomed INTO this
+        // episode the HTML info card carries all this text, so suppress the
+        // canvas label to avoid the overlap the user flagged.
+        if (isHot && !zoomedHere && st.camera.zoom > 0.2) {
           const labelDist = r + 18;
           const lx = s.x + Math.cos(ep.angle) * labelDist;
           const ly = s.y + Math.sin(ep.angle) * labelDist;
@@ -822,8 +893,15 @@ const RadialCanvas = forwardRef(function RadialCanvas(
     function enterEpisode(ep, idx) {
       st.viewLevel = "episode";
       st.focusEp = idx;
-      st.camera.targetX = ep.x;
-      st.camera.targetY = ep.y;
+      // Target the midpoint between the ring node (ep.x/ep.y, at R_CLASS)
+      // and its line-cell grid's centroid (further out, at R_STRIP_START).
+      // Centering purely on the node left the grid — the actual content —
+      // sprawled off to one side of the viewport every time, which read as
+      // "not aligned centrally" when zooming in/out; centering purely on
+      // the grid would do the same to the node. The midpoint keeps both
+      // balanced on screen.
+      st.camera.targetX = (ep.x + ep.centroidX) / 2;
+      st.camera.targetY = (ep.y + ep.centroidY) / 2;
       st.camera.targetZoom = 1.4; // >0.9 so per-cell hover/glyphs kick in immediately
       callbackRef.current.onViewLevelChange?.({ level: "episode", episode: ep.id });
     }
@@ -914,6 +992,61 @@ const RadialCanvas = forwardRef(function RadialCanvas(
       if (e.key === "Escape" && st.viewLevel !== "overview") goOverview();
     }
 
+    // HTML info card shown beside the cell grid when zoomed into an episode.
+    // HTML (not canvas text) so it lays out cleanly — heading, timestamp/score
+    // rows, click hint — and never overlaps the dots. Content rebuilds only
+    // when the focused episode changes; position updates every frame.
+    function updateEpisodeCard() {
+      const card = cardRef.current;
+      if (!card) return;
+      const show = st.viewLevel === "episode" && st.focusEp != null && st.layout
+        && st.layout.episodes[st.focusEp] && !st.isZoomedIn;
+      if (!show) {
+        if (card.style.display !== "none") card.style.display = "none";
+        st._cardEp = null;
+        return;
+      }
+      const ep = st.layout.episodes[st.focusEp];
+      const gc = w2s(ep.centroidX, ep.centroidY);
+      // Place on whichever side of the grid has the screen's empty space:
+      // grid on the left half → card to the right, and vice-versa.
+      const halfSpan = (Math.max(ep.stripW, ep.stripH) / 2) * st.camera.zoom + 28;
+      const onRight = gc.x < st.W * 0.5;
+      card.style.display = "block";
+      card.style.top = `${gc.y}px`;
+      if (onRight) {
+        card.style.left = `${gc.x + halfSpan}px`;
+        card.style.right = "auto";
+        card.style.transform = "translateY(-50%)";
+      } else {
+        card.style.left = "auto";
+        card.style.right = `${st.W - (gc.x - halfSpan)}px`;
+        card.style.transform = "translateY(-50%)";
+      }
+
+      if (st._cardEp !== st.focusEp) {
+        st._cardEp = st.focusEp;
+        const promos = [...ep.promos].sort((a, b) => b.score - a.score);
+        const rows = promos.map((p, i) => {
+          const seg = p.segments && p.segments[0] ? p.segments[0] : {};
+          const tc = seg.start_tc ? `${seg.start_tc}–${seg.end_tc}` : "";
+          return (
+            `<div class="epcard-row">` +
+            `<span class="epcard-rank">${i + 1}</span>` +
+            `<span class="epcard-tc">${tc}</span>` +
+            `<span class="epcard-score">${p.score}</span>` +
+            `</div>`
+          );
+        }).join("");
+        card.innerHTML =
+          `<div class="epcard-head">Episode ${ep.id}</div>` +
+          `<div class="epcard-sub">${ep.promoCount} promo${ep.promoCount === 1 ? "" : "s"} &middot; best ${ep.maxScore}/100</div>` +
+          `<div class="epcard-cols"><span>#</span><span>TIMESTAMP</span><span>SCORE</span></div>` +
+          `<div class="epcard-list">${rows}</div>` +
+          `<div class="epcard-hint">Click a glowing cell to open its promo</div>`;
+      }
+    }
+
     function render() {
       st.camera.x = lerp(st.camera.x, st.camera.targetX, 0.08);
       st.camera.y = lerp(st.camera.y, st.camera.targetY, 0.08);
@@ -933,12 +1066,24 @@ const RadialCanvas = forwardRef(function RadialCanvas(
       drawEpisodeNodes();
       if (!st.isZoomedIn) drawCenterInfo();
       flushLabels();
+      updateEpisodeCard();
 
       st.animId = requestAnimationFrame(render);
     }
 
     resize();
     window.addEventListener("resize", resize);
+    // The canvas also changes size when the side panels slide open/closed —
+    // the grid column it lives in shrinks without the window resizing. Without
+    // observing that, st.W/st.H (and the center the drawing is anchored to)
+    // keep the old full-width value, so the whole map appears shoved off to
+    // one side. A ResizeObserver on the container recenters it on every
+    // layout change, panels included.
+    let ro = null;
+    if (typeof ResizeObserver !== "undefined") {
+      ro = new ResizeObserver(() => resize());
+      ro.observe(canvas.parentElement);
+    }
     canvas.addEventListener("mousedown", onMouseDown);
     canvas.addEventListener("mousemove", onMouseMove);
     canvas.addEventListener("mouseup", onMouseUp);
@@ -952,6 +1097,7 @@ const RadialCanvas = forwardRef(function RadialCanvas(
     return () => {
       cancelAnimationFrame(st.animId);
       window.removeEventListener("resize", resize);
+      if (ro) ro.disconnect();
       canvas.removeEventListener("mousedown", onMouseDown);
       canvas.removeEventListener("mousemove", onMouseMove);
       canvas.removeEventListener("mouseup", onMouseUp);
@@ -968,6 +1114,7 @@ const RadialCanvas = forwardRef(function RadialCanvas(
         ref={svgRef}
         style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none", overflow: "hidden" }}
       />
+      <div ref={cardRef} className="epcard" style={{ display: "none" }} />
     </div>
   );
 });

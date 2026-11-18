@@ -8,6 +8,17 @@ function fmtTime(s) {
   return `${m}:${sec}`;
 }
 
+// Screenplay line types from the original parsed source (plan 04's feeding
+// data set) — camera direction, action/stage direction, dialogue, sound fx.
+// Each gets its own tag + color so the structure of the original script is
+// still legible here, not flattened into a single "dialogue vs stage" look.
+const TYPE_TAGS = {
+  camera: { label: "CAM", className: "camera" },
+  action: { label: "ACTION", className: "action" },
+  dialogue: { label: "", className: "dialogue" },
+  sound_fx: { label: "SFX", className: "sfx" },
+};
+
 export default function LyricsPlayer({ promo, charIndex }) {
   const [playing, setPlaying] = useState(false);
   const [elapsed, setElapsed] = useState(0);
@@ -45,9 +56,16 @@ export default function LyricsPlayer({ promo, charIndex }) {
     return () => rafRef.current && cancelAnimationFrame(rafRef.current);
   }, [playing]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const activeIdx = transcript.findIndex(
-    (u) => elapsed + segStart >= u.start && elapsed + segStart < u.end
-  );
+  // Active = the last line that has STARTED by now (karaoke style). Using a
+  // strict [start,end) window instead made the highlight vanish in every gap
+  // between lines (these camera/dialogue timestamps overlap and leave gaps),
+  // so it looked frozen. This advances line-by-line and never drops to -1.
+  const now = elapsed + segStart;
+  let activeIdx = -1;
+  for (let k = 0; k < transcript.length; k++) {
+    if (transcript[k].start <= now) activeIdx = k;
+    else break;
+  }
 
   useEffect(() => {
     if (activeIdx >= 0 && lineRefs.current[activeIdx] && containerRef.current) {
@@ -68,6 +86,11 @@ export default function LyricsPlayer({ promo, charIndex }) {
         <div>
           <div className="lyrics-ep">Episode {promo.episode} · Score {promo.score}</div>
           <div className="lyrics-title">{promo.hook.slice(0, 70)}</div>
+          {promo.segments?.[0]?.start_tc && (
+            <div className="lyrics-dbwindow">
+              DB timestamps: <strong>{promo.segments[0].start_tc} → {promo.segments[0].end_tc}</strong> in Episode {promo.episode}
+            </div>
+          )}
         </div>
         <button className="lyrics-play-btn" onClick={() => {
           if (elapsed >= totalDuration) setElapsed(0);
@@ -94,16 +117,18 @@ export default function LyricsPlayer({ promo, charIndex }) {
         )}
         {transcript.map((u, i) => {
           const isActive = i === activeIdx;
-          const isPast = elapsed + segStart >= u.end;
+          const isPast = i < activeIdx;
           const isDialogue = u.type === "dialogue";
+          const typeInfo = TYPE_TAGS[u.type] || TYPE_TAGS.action;
           return (
             <div
               key={i}
               ref={(el) => (lineRefs.current[i] = el)}
-              className={`lyrics-line ${isActive ? "active" : ""} ${isPast ? "past" : ""} ${isDialogue ? "dialogue" : "stage"}`}
+              className={`lyrics-line ${isActive ? "active" : ""} ${isPast ? "past" : ""} ${isDialogue ? "dialogue" : "stage"} line-${typeInfo.className}`}
               onClick={() => setElapsed(Math.max(0, u.start - segStart))}
             >
-              <span className="lyrics-time-tag">{fmtTime(u.start - segStart)}</span>
+              <span className="lyrics-time-tag" title="Original database timestamp">{u.start_tc || fmtTime(u.start)}</span>
+              {typeInfo.label && <span className={`lyrics-type-tag type-${typeInfo.className}`}>{typeInfo.label}</span>}
               {isDialogue && u.speaker && (
                 <span className="lyrics-speaker">
                   <CharacterGlyph style={styleFor(charIndex, u.speaker)} size={14} />

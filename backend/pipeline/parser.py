@@ -92,16 +92,37 @@ def episode_id_from_text(text, fallback):
     return int(m.group(1)) if m else fallback
 
 
+def parse_meta(text):
+    """Pulls the episode's header summary — LOGLINE + CONTINUITY NOTES.
+
+    These are a pre-written one-paragraph dramatic summary of the episode
+    and are the AI judge's cheapest, richest signal: they say what the
+    episode is about and, crucially, where the twist/secret lands, without
+    the model having to infer it from raw lines (plan 05, Tier 2 input).
+    """
+    def grab(label):
+        m = re.search(rf"{label}:\s*(.+)", text)
+        return m.group(1).strip() if m else ""
+    return {"logline": grab("EPISODE LOGLINE"), "continuity": grab("CONTINUITY NOTES")}
+
+
 def parse_folder(folder_path):
-    """Parses every episode-*.txt in a folder. Returns {episode_id: [units]}."""
+    """Parses every episode-*.txt in a folder.
+
+    Returns (units_by_episode, meta_by_episode):
+      units_by_episode : {episode_id: [unit, ...]}
+      meta_by_episode  : {episode_id: {"logline", "continuity"}}
+    """
     import os
-    out = {}
+    units_out = {}
+    meta_out = {}
     for fname in sorted(os.listdir(folder_path)):
         if not fname.endswith(".txt"):
             continue
         with open(os.path.join(folder_path, fname), encoding="utf-8") as f:
             text = f.read()
-        fallback = len(out) + 1
+        fallback = len(units_out) + 1
         eid = episode_id_from_text(text, fallback)
-        out[eid] = parse_episode(text, eid)
-    return out
+        units_out[eid] = parse_episode(text, eid)
+        meta_out[eid] = parse_meta(text)
+    return units_out, meta_out

@@ -1,89 +1,97 @@
 # Kuku Promo Finder
 
-Finds 20–60s promo candidates (hook → cliffhanger) in microdrama screenplays.
-Built for Kuku's AI Generalist take-home, Problem 1.
+Finds the best **promo clips** inside a 50-episode microdrama screenplay, scores
+them, and surfaces the strongest ones to a human editor — so nobody has to watch
+all 50 episodes to decide what to cut.
 
-Design/architecture decisions are in [`plans/`](plans/) — read `01` → `02` →
-`03` in order; `03` is the one that reflects what's actually built here.
+**Live app:** https://frontend-orpin-alpha-31.vercel.app
+**API:** https://backend-puce-gamma-97.vercel.app
 
-## Structure
+---
 
-```
-backend/     Express (Node) + the scoring pipeline (Python), one Vercel project
-frontend/    React (Vite), the HexBrain-derived UI
-plans/       design docs, in build order
-```
+## What it does
+
+- Parses all 50 episode scripts (camera / action / dialogue / sound-fx lines with
+  timestamps).
+- **Tier 1 — heuristic scorer:** scores every 15–60s candidate window on hook
+  strength, cliffhanger pull, emotional density, two-hander conflict, action beats,
+  suspense cues, and ideal length. Every point is shown as a transparent receipt.
+- **Tier 2 — AI judge (optional):** an LLM (Qwen via Groq, or Anthropic) re-scores
+  the top clips and flags any that would spoil a twist. `total = heuristic + AI`.
+- **Tier 3 — finalize:** cuts clips *before* the reveal (suspense preservation),
+  enforces cross-episode diversity, and normalizes every score to **0–100**.
+- Hands the editor each top clip with its **episode number, original database
+  timestamps, and full clip script** — ready to cut.
+
+## How to use it (step by step)
+
+1. Open the live app (link above).
+2. Click **Run pipeline on 50 episodes**. It parses, scores, and ranks (a few
+   seconds).
+3. The radial map fills in. The **top 5 episodes** are ringed in orange and
+   numbered **#1–#5** — those hold the best clips.
+4. **Click a top-5 circle** to zoom into that episode. A card appears beside the
+   grid listing its clips with **timestamps** and **scores (0–100)**.
+5. **Click a glowing cell** to open that promo. The panel on the right shows the
+   clip's dialogue with original DB timestamps and the full score receipt
+   (`heuristic + AI = total`).
+6. Press **▶ Play** to watch the dialogue scroll through in sync.
+7. Use the **Ranked promos** rail (right) to jump to any clip; collapse either
+   sidebar with the `⟩⟩` buttons to see more of the map.
 
 ## Run locally
 
-Backend — `backend/dev_server.py` runs all three endpoints (`/api/pipeline`,
-`/api/youtube`, `/api/upload`) behind one plain Python process, which is
-both simpler and more reliable than `vercel dev`'s mixed Node/Python
-emulation for local testing:
-
+**Backend (script pipeline + optional AI):**
 ```bash
 cd backend
+python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-pip install faster-whisper av    # only needed for /api/upload (MP4 mode)
+# optional AI judge — copy the template and add your key:
+cp .env.example .env    # then set QWEN_API_KEY (Groq) or ANTHROPIC_API_KEY
 python3 dev_server.py 8787
 ```
 
-`faster-whisper`/`av` aren't in `requirements.txt` because that file is also
-what Vercel's `/api/youtube` function bundles — adding Whisper's weights to
-a serverless function's bundle is the opposite of what we want there.
-
-Frontend:
-
+**Frontend:**
 ```bash
 cd frontend
 npm install
-npm run dev
+npm run dev        # http://localhost:5173
 ```
+The frontend auto-targets `http://localhost:8787` when run on localhost, and the
+deployed backend otherwise — no config edit needed.
 
-Then edit `frontend/src/config.js` to point `BACKEND_URL` at
-`http://localhost:8787` (or wherever the backend is running) — **and set it
-back to the production URL before deploying**, since this file is what both
-`vercel --prod` runs ship with no further editing.
+## Deployment
 
-YouTube mode only works against a backend running from a normal residential
-connection — YouTube blocks caption requests from datacenter IPs (Vercel
-included) with a bot check, which is a deliberate reason to test it via
-`dev_server.py` locally rather than against the deployed backend.
-
-## Deploy
+Both apps deploy to **Vercel** (serverless — no Docker/containers).
 
 ```bash
-cd backend && npx vercel --prod     # note the URL it gives you
-cd ../frontend
-# edit src/config.js: BACKEND_URL = "<that URL>"
-npx vercel --prod
+cd backend  && vercel deploy --prod
+cd frontend && vercel deploy --prod
 ```
 
-No environment variables, no database, no auth — intentionally, per the
-assignment's scope (see `plans/03`).
+### Environment variables
 
-## What's actually built vs. documented
+| Where | Variable | Needed? |
+|-------|----------|---------|
+| **Frontend** (Vercel) | — | **None.** The backend URL is baked into `src/config.js`. |
+| **Backend** (Vercel) | `QWEN_API_KEY`, `QWEN_BASE_URL`, `QWEN_MODEL` | **Optional.** Only to enable the AI judge on the deployed site. Left unset, the site runs the heuristic scorer only (fast, no timeout). |
 
-- **Built:** the script-folder input path — parses the 50 bundled episode
-  `.txt` files, scores every candidate window, ranks the top promos. A
-  Canvas2D radial map (episodes as rings, scored windows as dot strips,
-  cross-episode links weighted by combined score) with an animated
-  parse → score → rank pipeline reveal, SVG-rendered labels with collision
-  avoidance, and a ranked-promo rail that drives the map the same way
-  clicking the canvas would. A karaoke-style lyrics player that scrubs/
-  scrolls the promo's transcript line by line, with a characters chip row.
-  YouTube input — scores the video's own caption track via yt-dlp, no
-  audio download or transcription model, which is what keeps it inside a
-  serverless function's budget (works from a normal connection; blocked
-  from Vercel's IPs by YouTube's bot check — see "Run locally" above). MP4
-  upload — real transcription via faster-whisper, capped at 20 minutes of
-  video to stay within a non-GPU machine's memory; only runs against
-  `dev_server.py` locally, since a persistent model process is exactly
-  what a Vercel serverless function can't host.
-- **Documented, not built:** the MongoDB knowledge model — see `plans/02`
-  for why and how, if that gets built next.
+> The AI judge is recommended **locally**, not on Vercel: Groq's free-tier rate
+> limit can make a call wait longer than Vercel's function timeout. The deployed
+> site runs heuristic-only by design; the local backend runs the full AI pipeline.
 
-## Raw outputs
+Secrets live in `backend/.env`, which is gitignored and never deployed — set any
+production keys in the Vercel dashboard (Project → Settings → Environment Variables).
 
-`backend/pipeline/cli.py <folder> <top_n>` runs the pipeline standalone and
-dumps JSON — this is what produces the raw-outputs folder for submission.
+## Project layout
+
+```
+backend/
+  api/            Vercel serverless entrypoints (pipeline.py = script scorer)
+  pipeline/       parser · scorer (Tier 1/3) · ai_judge (Tier 2) · cli
+  data/episodes/  the 50 episode scripts
+  dev_server.py   local server (script pipeline; AI judge reads .env)
+frontend/
+  src/            React + Vite · Canvas2D radial map · players · receipt
+plans/            architecture decision records
+```

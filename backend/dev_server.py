@@ -14,8 +14,13 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "pipeline"))
 from cli import run as run_pipeline  # noqa: E402
 from captions import cues_to_units, parse_vtt  # noqa: E402
-from scorer import build_episode_cells, find_promos  # noqa: E402
+from scorer import apply_judgment, build_episode_cells, find_promos  # noqa: E402
 from transcribe import transcribe_file  # noqa: E402
+
+try:
+    from ai_judge import get_judge  # noqa: E402
+except Exception:  # pragma: no cover
+    get_judge = lambda: None  # noqa: E731
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "api"))
 from youtube import _fetch_captions  # noqa: E402
@@ -95,6 +100,8 @@ class Handler(BaseHTTPRequestHandler):
                 cues = transcribe_file(tmp_path)
                 units = cues_to_units(cues, source_id="upload")
                 promos, cands = find_promos(units, "upload", cap=10)
+                # MP4 clipping uses the heuristic scorer ONLY — no AI judge.
+                promos = apply_judgment(units, promos, "upload", judge=None)
                 cells = build_episode_cells(units, promos, cands)
                 return self._respond({
                     "episode_count": 1, "unit_count": len(units),
@@ -137,6 +144,7 @@ class Handler(BaseHTTPRequestHandler):
             cues = parse_vtt(vtt_text)
             units = cues_to_units(cues, source_id="youtube")
             promos, cands = find_promos(units, "youtube", cap=top_n)
+            promos = apply_judgment(units, promos, "youtube", judge=get_judge())
             cells = build_episode_cells(units, promos, cands)
             return self._respond({
                 "episode_count": 1, "unit_count": len(units),
