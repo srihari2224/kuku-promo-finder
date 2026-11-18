@@ -16,16 +16,21 @@ plans/       design docs, in build order
 
 ## Run locally
 
-Backend — `backend/dev_server.py` runs both endpoints (`/api/pipeline`,
-`/api/youtube`) behind one plain Python process, which is both simpler and
-more reliable than `vercel dev`'s mixed Node/Python emulation for local
-testing:
+Backend — `backend/dev_server.py` runs all three endpoints (`/api/pipeline`,
+`/api/youtube`, `/api/upload`) behind one plain Python process, which is
+both simpler and more reliable than `vercel dev`'s mixed Node/Python
+emulation for local testing:
 
 ```bash
 cd backend
 pip install -r requirements.txt
+pip install faster-whisper av    # only needed for /api/upload (MP4 mode)
 python3 dev_server.py 8787
 ```
+
+`faster-whisper`/`av` aren't in `requirements.txt` because that file is also
+what Vercel's `/api/youtube` function bundles — adding Whisper's weights to
+a serverless function's bundle is the opposite of what we want there.
 
 Frontend:
 
@@ -70,11 +75,13 @@ assignment's scope (see `plans/03`).
   YouTube input — scores the video's own caption track via yt-dlp, no
   audio download or transcription model, which is what keeps it inside a
   serverless function's budget (works from a normal connection; blocked
-  from Vercel's IPs by YouTube's bot check — see "Run locally" above).
-- **Documented, not built:** MP4 upload (needs real transcription — Whisper
-  or similar — which needs a long-running worker a Vercel serverless
-  function can't host) and the MongoDB knowledge model. See `plans/01` and
-  `plans/02` for why and how, if those get built next.
+  from Vercel's IPs by YouTube's bot check — see "Run locally" above). MP4
+  upload — real transcription via faster-whisper, capped at 20 minutes of
+  video to stay within a non-GPU machine's memory; only runs against
+  `dev_server.py` locally, since a persistent model process is exactly
+  what a Vercel serverless function can't host.
+- **Documented, not built:** the MongoDB knowledge model — see `plans/02`
+  for why and how, if that gets built next.
 
 ## Raw outputs
 
