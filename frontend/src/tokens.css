@@ -1,0 +1,65 @@
+/* Design tokens, decoded from WEB DESIGNS/HexBrain AI — Design System PRD.
+   Reused verbatim (see plans/02-platform-build-and-redesign.md §3). */
+:root {
+  --bg: #13120e;
+  --raise: #1f1d17;
+  --line: #322f25;
+  --ink: #efe6d0;
+  --dim: #8f8874;
+  --hot: #ff6a3d;
+  --hot-hover: #ff8a60;
+  --hot-active: #e55a2d;
+  --red: #ff3b30;
+
+  --radius-tag: 4px;
+  --radius-chip: 6px;
+  --radius-btn: 8px;
+  --radius-card: 12px;
+
+  --space-4: 4px;
+  --space-8: 8px;
+  --space-12: 12px;
+  --space-16: 16px;
+  --space-24: 24px;
+  --space-32: 32px;
+  --space-48: 48px;
+  --space-64: 64px;
+
+  --t-fast: 100ms ease-out;
+  --t-standard: 150ms ease-out;
+  --t-slow: 300ms ease-out;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Recursive", system-ui, sans-serif;
+  font-variation-settings: "MONO" 0, "CASL" 0.4;
+}
+
+.mono {
+  font-variation-settings: "MONO" 1;
+}
+
+h1, h2, h3, p { margin: 0; }
+
+a { color: inherit; text-decoration: none; }
+
+button {
+  font-family: inherit;
+  border: none;
+  cursor: pointer;
+}
+
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--hot);
+  outline-offset: 2px;
+}

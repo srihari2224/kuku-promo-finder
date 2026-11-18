@@ -1,0 +1,11 @@
+{
+  "name": "kuku-promo-finder-backend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}

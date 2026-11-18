@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/api/pipeline", "destination": "/api/pipeline.py" },
+    { "source": "/api/(.*)", "destination": "/api/index.js" }
+  ]
+}
