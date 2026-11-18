@@ -121,6 +121,35 @@ export default function App() {
     }
   }
 
+  async function runUpload() {
+    if (!mp4File) {
+      setError("Choose an MP4 file first.");
+      setStatus("error");
+      return;
+    }
+    resetRun();
+    try {
+      const form = new FormData();
+      form.append("file", mp4File);
+      const res = await fetch(`${BACKEND_URL}/api/upload`, { method: "POST", body: form });
+      if (res.status === 404) {
+        throw new Error(
+          "This backend doesn't have /api/upload — it's only wired up in the local dev " +
+          "server (backend/dev_server.py), since real transcription needs faster-whisper " +
+          "running somewhere with a persistent process, not a Vercel serverless function."
+        );
+      }
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error || `Backend returned ${res.status}`);
+      setData(json);
+      runAnimatedPhases(json);
+    } catch (e) {
+      setError(e.message || "Couldn't transcribe that file.");
+      setStatus("error");
+      setPhase("idle");
+    }
+  }
+
   function handleSelectPromo(promo) {
     setSelectedPromo(promo);
     setPanelOpen(!!promo);
@@ -228,7 +257,7 @@ export default function App() {
               onClick={() => setMode("upload")}
             >
               <h3>Upload MP4</h3>
-              <p>Needs a transcription step — see note below.</p>
+              <p>Real transcription via faster-whisper — local backend only.</p>
             </button>
           </div>
 
@@ -262,18 +291,25 @@ export default function App() {
 
           {mode === "upload" && (
             <div className="mode-fallback">
-              <input
-                className="mode-input"
-                type="file"
-                accept="video/mp4"
-                onChange={(e) => setMp4File(e.target.files?.[0] || null)}
-              />
+              <div className="mode-row">
+                <input
+                  className="mode-input"
+                  type="file"
+                  accept="video/mp4"
+                  onChange={(e) => setMp4File(e.target.files?.[0] || null)}
+                  disabled={status === "loading"}
+                />
+                <button className="btn btn-primary" onClick={runUpload} disabled={status === "loading"}>
+                  {status === "loading" ? "Transcribing…" : "Score video"}
+                </button>
+              </div>
               <div className="mode-note">
                 {mp4File ? `Selected: ${mp4File.name}. ` : ""}
-                Not wired up yet — turning this file into text needs real transcription (Whisper or
-                similar), and that needs a long-running worker, not a Vercel serverless function.
-                Ask to have this built once you've picked how: a paid transcription API with a key,
-                or an in-browser model that's free but slower.
+                Transcribes with faster-whisper (CPU, "tiny" model) and scores the result the same
+                way the script pipeline does. Capped at 20 minutes of video — long enough for this
+                tool's own 20–60s promo windows, short enough not to exhaust memory on a non-GPU
+                machine. Only works against a locally running backend (see README) — Vercel's
+                serverless functions can't host a persistent model process.
               </div>
             </div>
           )}

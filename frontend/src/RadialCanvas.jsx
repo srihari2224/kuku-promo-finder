@@ -471,7 +471,12 @@ const RadialCanvas = forwardRef(function RadialCanvas(
         if (ci >= revealedCount && st.phase !== "idle") return;
 
         const s = w2s(ep.x, ep.y);
-        const r = ep.radius * Math.min(0.9 + st.camera.zoom * 0.5, 1.4);
+        // Radius must scale WITH zoom, not against a clamped curve of it —
+        // node spacing shrinks proportionally as you zoom out (it's a
+        // function of camera.zoom via w2s), so a radius that doesn't shrink
+        // the same way inevitably overlaps neighboring nodes at low zoom.
+        // This was the real cause of "overlapping circles," not just labels.
+        const r = Math.max(ep.radius * st.camera.zoom * 1.1, 3);
         const isHot = st.hovered.ep === ci;
         const shouldFade = st.hovered.ep >= 0 && !isHot;
         const isIdle = st.phase === "idle";
