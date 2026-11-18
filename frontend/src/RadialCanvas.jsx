@@ -430,7 +430,10 @@ const RadialCanvas = forwardRef(function RadialCanvas(
             ctx.restore();
             ctx.globalAlpha = baseAlpha * stripReveal;
           } else {
-            ctx.fillStyle = scoreNorm > 0.75 ? HOT : scoreNorm > 0.55 ? `rgba(255,106,61,${0.5 + scoreNorm * 0.5})` : INK;
+            // Grey by default, same as hexbrainai.com's report dots — hue
+            // is reserved for hover/selection state, not score magnitude.
+            // Score is already legible from the badge text beside the strip.
+            ctx.fillStyle = isStripHot ? `rgba(255,106,61,${0.4 + scoreNorm * 0.4})` : INK;
             ctx.fillRect(s.x - sz / 2, s.y - sz / 2, sz, sz);
           }
         });
@@ -446,7 +449,7 @@ const RadialCanvas = forwardRef(function RadialCanvas(
           queueLabel({
             x: lx, y: ly, text: strip.score, align: "center",
             fontSize: Math.max(11, 13 * Math.min(zoom, 1.3)), weight: 700,
-            color: isStripHot ? HOT : scoreNorm > 0.7 ? HOT : DIM,
+            color: isStripHot ? HOT : DIM,
             priority: isStripHot ? 900 : 100 + strip.score,
           });
         }
@@ -486,12 +489,16 @@ const RadialCanvas = forwardRef(function RadialCanvas(
           ctx.stroke();
         }
 
+        // Grey ring by default, same restraint hexbrainai.com uses — every
+        // class node there is the same neutral white/grey outline regardless
+        // of report count; only the hovered/focused one turns orange. Data
+        // magnitude already reads through node size, not hue.
         ctx.beginPath();
         ctx.arc(s.x, s.y, r, 0, TWO_PI);
         ctx.fillStyle = BG;
         ctx.fill();
         ctx.lineWidth = isHot || zoomedHere ? 2.5 : 1.5;
-        ctx.strokeStyle = isHot || zoomedHere ? HOT : (ep.promoCount > 0 ? "rgba(255,106,61,0.4)" : "#322f25");
+        ctx.strokeStyle = isHot || zoomedHere ? HOT : (ep.promoCount > 0 ? "rgba(239,230,208,0.55)" : "#322f25");
         ctx.stroke();
 
         const ir = r * 0.72;
@@ -501,14 +508,13 @@ const RadialCanvas = forwardRef(function RadialCanvas(
         ctx.lineWidth = 0.8;
         ctx.stroke();
 
-        if (ep.maxScore > 0 && !isIdle) {
-          const glowAlpha = (ep.maxScore / 100) * 0.4;
-          const grad = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, r * 2);
-          grad.addColorStop(0, `rgba(255,106,61,${glowAlpha})`);
+        if ((isHot || zoomedHere) && !isIdle) {
+          const grad = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, r * 2.2);
+          grad.addColorStop(0, "rgba(255,106,61,0.3)");
           grad.addColorStop(1, "transparent");
           ctx.fillStyle = grad;
           ctx.beginPath();
-          ctx.arc(s.x, s.y, r * 2, 0, TWO_PI);
+          ctx.arc(s.x, s.y, r * 2.2, 0, TWO_PI);
           ctx.fill();
         }
 

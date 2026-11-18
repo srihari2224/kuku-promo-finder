@@ -2,6 +2,7 @@
 understands (same shape parser.py produces from screenplays, minus
 speaker/emotion/scene — captions don't carry those).
 """
+import html
 import re
 
 TS_RE = re.compile(r"(\d+:\d+:\d+\.\d+|\d+:\d+\.\d+)\s*-->\s*(\d+:\d+:\d+\.\d+|\d+:\d+\.\d+)")
@@ -32,7 +33,7 @@ def parse_vtt(text):
         i += 1
         content = []
         while i < n and lines[i].strip():
-            content.append(TAG_RE.sub("", lines[i]).strip())
+            content.append(html.unescape(TAG_RE.sub("", lines[i])).strip())
             i += 1
         joined = " ".join(c for c in content if c).strip()
         if joined:
