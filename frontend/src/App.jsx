@@ -3,14 +3,20 @@ import { BACKEND_URL } from "./config.js";
 import RadialCanvas from "./RadialCanvas.jsx";
 import LyricsPlayer from "./LyricsPlayer.jsx";
 
-const PHASES = ["idle", "parsing", "scoring", "ranking", "complete"];
 const PHASE_LABELS = {
   idle: "Idle",
-  parsing: "Parsing screenplays",
+  parsing: "Parsing source",
   scoring: "Scoring candidate windows",
   ranking: "Cross-episode ranking",
   complete: "Done",
 };
+
+function uniqueSpeakers(promo) {
+  if (!promo?.transcript) return [];
+  const seen = new Set();
+  promo.transcript.forEach((u) => { if (u.speaker) seen.add(u.speaker); });
+  return [...seen];
+}
 
 export default function App() {
   const [mode, setMode] = useState("script"); // script | youtube | upload
@@ -22,21 +28,18 @@ export default function App() {
   const [selectedPromo, setSelectedPromo] = useState(null);
   const [sortDir, setSortDir] = useState("desc");
   const [panelOpen, setPanelOpen] = useState(false);
+  const [viewLevel, setViewLevel] = useState({ level: "overview" });
+  const [youtubeUrl, setYoutubeUrl] = useState("");
+  const [mp4File, setMp4File] = useState(null);
   const animRef = useRef(null);
-
-  const youtubeDisabled = mode === "youtube";
-  const uploadDisabled = mode === "upload";
+  const canvasRef = useRef(null);
 
   const runAnimatedPhases = useCallback((resultData) => {
-    const episodeCount = resultData.episode_count || 50;
-    const promoCount = resultData.promo_count || resultData.promos.length;
-
     const sequence = [
-      { phase: "parsing", duration: 1100 },
-      { phase: "scoring", duration: 1400 },
-      { phase: "ranking", duration: 900 },
+      { phase: "parsing", duration: 1000 },
+      { phase: "scoring", duration: 1300 },
+      { phase: "ranking", duration: 800 },
     ];
-
     let seqIdx = 0;
     let phaseStart = performance.now();
 
@@ -61,7 +64,7 @@ export default function App() {
     animRef.current = requestAnimationFrame(step);
   }, []);
 
-  async function runPipeline() {
+  function resetRun() {
     setStatus("loading");
     setError(null);
     setData(null);
@@ -69,7 +72,11 @@ export default function App() {
     setPanelOpen(false);
     setPhase("idle");
     setPhaseProgress(0);
+    setViewLevel({ level: "overview" });
+  }
 
+  async function runPipeline() {
+    resetRun();
     try {
       const res = await fetch(`${BACKEND_URL}/api/pipeline`, {
         method: "POST",
@@ -90,14 +97,57 @@ export default function App() {
     }
   }
 
+  async function runYoutube() {
+    if (!youtubeUrl.trim()) {
+      setError("Paste a YouTube URL first.");
+      setStatus("error");
+      return;
+    }
+    resetRun();
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/youtube`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: youtubeUrl.trim(), top_n: 10 }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error || `Backend returned ${res.status}`);
+      setData(json);
+      runAnimatedPhases(json);
+    } catch (e) {
+      setError(e.message || "Couldn't score that video.");
+      setStatus("error");
+      setPhase("idle");
+    }
+  }
+
   function handleSelectPromo(promo) {
     setSelectedPromo(promo);
     setPanelOpen(!!promo);
   }
 
+  function handleViewLevelChange(v) {
+    setViewLevel(v);
+    if (v.level === "sunflower" && v.promo) {
+      setSelectedPromo(v.promo);
+      setPanelOpen(true);
+    } else if (v.level !== "sunflower") {
+      setPanelOpen(false);
+    }
+  }
+
+  function goBack() {
+    canvasRef.current?.goOverview();
+  }
+
   const sortedPromos = data
     ? [...data.promos].sort((a, b) => (sortDir === "desc" ? b.score - a.score : a.score - b.score))
     : [];
+
+  const breadcrumb = ["Episodes"];
+  if (viewLevel.level === "episode") breadcrumb.push(`EP${viewLevel.episode}`);
+  if (viewLevel.level === "sunflower") breadcrumb.push(`EP${viewLevel.episode}`, "Promo window");
+  const showBack = viewLevel.level !== "overview";
 
   return (
     <div className="shell">
@@ -113,19 +163,36 @@ export default function App() {
 
       <div className="canvas-stage">
         <RadialCanvas
+          ref={canvasRef}
           data={data}
           phase={phase}
           animProgress={phaseProgress}
           onSelectPromo={handleSelectPromo}
-          selectedPromo={selectedPromo}
+          onViewLevelChange={handleViewLevelChange}
         />
+
+        {status === "ready" && (
+          <div className="breadcrumb-bar">
+            <div className="breadcrumb">
+              {breadcrumb.map((b, i) => (
+                <span key={i}>
+                  {i > 0 && <span className="crumb-sep">/</span>}
+                  <span className={i === breadcrumb.length - 1 ? "crumb-current" : ""}>{b}</span>
+                </span>
+              ))}
+            </div>
+            {showBack && (
+              <button className="back-btn" onClick={goBack}>← Back <kbd>Esc</kbd></button>
+            )}
+          </div>
+        )}
 
         <div className="hud-overlay">
           <div className="hud-left">
             <p className="hud-desc">
-              Each ring is an episode. Dot strips are scored 20–60s promo candidates — glow intensity
-              is score. Click a strip to open its window; click an episode to zoom. Bezier arcs link
-              episodes whose top promo scores ≥60, suggesting cross-episode promo stitching.
+              Each ring is an episode. Dot strips are scored 20–60s promo candidates — glow and
+              the number beside each strip are its score. Click a strip to open its window; click
+              an episode to zoom in. Bezier arcs link episodes whose top promo scores ≥60.
             </p>
           </div>
           <div className="hud-right">
@@ -150,18 +217,18 @@ export default function App() {
               <p>50 bundled episodes — parsed server-side.</p>
             </button>
             <button
-              className={`input-card ${mode === "youtube" ? "active" : ""} ${youtubeDisabled ? "coming-soon" : ""}`}
+              className={`input-card ${mode === "youtube" ? "active" : ""}`}
               onClick={() => setMode("youtube")}
             >
               <h3>YouTube link</h3>
-              <p>Transcribe + score a public video. Paste a URL below.</p>
+              <p>Scores the video's own captions — no audio download needed.</p>
             </button>
             <button
-              className={`input-card ${mode === "upload" ? "active" : ""} ${uploadDisabled ? "coming-soon" : ""}`}
+              className={`input-card ${mode === "upload" ? "active" : ""}`}
               onClick={() => setMode("upload")}
             >
               <h3>Upload MP4</h3>
-              <p>Whisper-transcribe an uploaded clip, then score it.</p>
+              <p>Needs a transcription step — see note below.</p>
             </button>
           </div>
 
@@ -173,21 +240,40 @@ export default function App() {
 
           {mode === "youtube" && (
             <div className="mode-fallback">
-              <input className="mode-input" placeholder="https://youtube.com/watch?v=..." disabled />
+              <div className="mode-row">
+                <input
+                  className="mode-input"
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  value={youtubeUrl}
+                  onChange={(e) => setYoutubeUrl(e.target.value)}
+                  disabled={status === "loading"}
+                />
+                <button className="btn btn-primary" onClick={runYoutube} disabled={status === "loading"}>
+                  {status === "loading" ? "Scoring…" : "Score video"}
+                </button>
+              </div>
               <div className="mode-note">
-                Needs yt-dlp + Whisper on the server, which Vercel's serverless runtime can't host reliably
-                (no persistent ffmpeg binary, 10s cold-start budget). Built and tested locally in ClipCut;
-                not wired into this deployment — see plans/01 for the design.
+                Fetches the video's own caption track (auto or uploaded) via yt-dlp and runs the
+                same promo scorer against it — no Whisper, no video download, so it fits inside a
+                serverless function. Needs the video to actually have English captions.
               </div>
             </div>
           )}
 
           {mode === "upload" && (
             <div className="mode-fallback">
-              <input className="mode-input" type="file" accept="video/mp4" disabled />
+              <input
+                className="mode-input"
+                type="file"
+                accept="video/mp4"
+                onChange={(e) => setMp4File(e.target.files?.[0] || null)}
+              />
               <div className="mode-note">
-                Same constraint as YouTube: transcription needs a long-running worker, not a serverless
-                function. Works in the local ClipCut pipeline; not wired into this deployment.
+                {mp4File ? `Selected: ${mp4File.name}. ` : ""}
+                Not wired up yet — turning this file into text needs real transcription (Whisper or
+                similar), and that needs a long-running worker, not a Vercel serverless function.
+                Ask to have this built once you've picked how: a paid transcription API with a key,
+                or an in-browser model that's free but slower.
               </div>
             </div>
           )}
@@ -225,8 +311,18 @@ export default function App() {
 
       {panelOpen && selectedPromo && (
         <div className="detail-panel">
-          <button className="detail-close" onClick={() => setPanelOpen(false)}>✕</button>
+          <button className="detail-close" onClick={() => { setPanelOpen(false); goBack(); }}>✕</button>
           <LyricsPlayer promo={selectedPromo} />
+          {uniqueSpeakers(selectedPromo).length > 0 && (
+            <div className="character-row">
+              <span className="tag">Characters</span>
+              <div className="character-chips">
+                {uniqueSpeakers(selectedPromo).map((s) => (
+                  <span className="character-chip" key={s}>{s}</span>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="detail-meta">
             <div className="promo-line"><span className="tag">Hook</span>{selectedPromo.hook}</div>
             <div className="promo-line"><span className="tag">Cliffhanger</span>{selectedPromo.cliffhanger}</div>

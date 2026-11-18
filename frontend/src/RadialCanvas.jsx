@@ -1,17 +1,16 @@
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect, forwardRef, useImperativeHandle } from "react";
 
-const BG = "#13120e", RAISE = "#1f1d17", LINE = "#322f25", INK = "#efe6d0",
-  DIM = "#8f8874", HOT = "#ff6a3d", RED = "#ff3b30";
+const BG = "#13120e", INK = "#efe6d0", DIM = "#8f8874", HOT = "#ff6a3d", RED = "#ff3b30";
 const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
 const TWO_PI = Math.PI * 2;
 
-const R_CLASS = 400;
-const R_STRIP_START = 490;
-const NODE_R_BASE = 14;
+const R_CLASS = 460;
+const R_STRIP_START = 560;
+const NODE_R_BASE = 16;
 const DOT_SIZE = 3;
 const DOT_GAP = 2.5;
 const DOT_PITCH = DOT_SIZE + DOT_GAP;
-const STRIP_GAP_RADIAL = 14;
+const STRIP_GAP_RADIAL = 18;
 const MAX_COLS = 5;
 
 let _seed = 42;
@@ -39,14 +38,15 @@ function buildLayout(data) {
     return isNaN(na) || isNaN(nb) ? a.localeCompare(b) : na - nb;
   });
 
-  const allEpisodeIds = [];
-  for (let i = 1; i <= (data.episode_count || 50); i++) {
-    const id = String(i).padStart(2, "0");
-    allEpisodeIds.push(id);
+  const allNumeric = episodeIds.every((id) => !isNaN(parseInt(id, 10)));
+  let allEpisodeIds;
+  if (allNumeric && (data.episode_count || 0) > episodeIds.length) {
+    allEpisodeIds = [];
+    for (let i = 1; i <= data.episode_count; i++) allEpisodeIds.push(String(i).padStart(2, "0"));
+    episodeIds.forEach((id) => { if (!allEpisodeIds.includes(id)) allEpisodeIds.push(id); });
+  } else {
+    allEpisodeIds = episodeIds;
   }
-  episodeIds.forEach((id) => {
-    if (!allEpisodeIds.includes(id)) allEpisodeIds.push(id);
-  });
 
   const N = allEpisodeIds.length;
   const angleStep = TWO_PI / N;
@@ -84,10 +84,9 @@ function buildLayout(data) {
       for (let ri = 0; ri < segCount; ri++) {
         const col = ri % cols;
         const row = Math.floor(ri / cols);
-        const wx = ox + col * DOT_PITCH * tanX + row * DOT_PITCH * cosA;
-        const wy = ox + col * DOT_PITCH * tanY + row * DOT_PITCH * sinA;
         dots.push({
-          col, row, wx: ox + col * DOT_PITCH * tanX + row * DOT_PITCH * cosA,
+          col, row,
+          wx: ox + col * DOT_PITCH * tanX + row * DOT_PITCH * cosA,
           wy: oy + col * DOT_PITCH * tanY + row * DOT_PITCH * sinA,
           seg: promo.transcript ? promo.transcript[ri] : null,
         });
@@ -97,6 +96,8 @@ function buildLayout(data) {
         episode: eid, episodeIndex: ci, promoIndex: pi, promo,
         angle, ox, oy, cosA, sinA, tanX, tanY,
         stripW, stripH, cols, rows, dots, currentR,
+        centroidX: ox + (stripW / 2) * tanX + (stripH / 2) * cosA,
+        centroidY: oy + (stripW / 2) * tanY + (stripH / 2) * sinA,
         score: promo.score,
       });
 
@@ -144,33 +145,50 @@ function buildIdleLayout(episodeCount) {
   return { episodes, promoDots: [], connections: [] };
 }
 
-export default function RadialCanvas({ data, phase, onSelectPromo, selectedPromo, animProgress }) {
+const RadialCanvas = forwardRef(function RadialCanvas(
+  { data, phase, onSelectPromo, onViewLevelChange, animProgress },
+  ref
+) {
   const canvasRef = useRef(null);
   const stateRef = useRef({
-    camera: { x: 0, y: 0, zoom: 0.55, targetX: 0, targetY: 0, targetZoom: 0.55 },
+    camera: { x: 0, y: 0, zoom: 0.5, targetX: 0, targetY: 0, targetZoom: 0.5 },
     layout: null, hovered: { ep: -1, strip: -1, dot: -1 },
-    isDragging: false, dragStart: { x: 0, y: 0 },
+    isDragging: false, dragMoved: false, dragStart: { x: 0, y: 0 },
     mouseScreen: { x: 0, y: 0 }, mouseWorld: { x: 0, y: 0 },
     isZoomedIn: false, sunflower: null, sunflowerDots: [],
     W: 0, H: 0, dpr: 1, animId: 0,
     phase: "idle", animProgress: 0,
-    selectedStripIdx: -1,
+    viewLevel: "overview",
   });
-  const callbackRef = useRef({ onSelectPromo });
+  const callbackRef = useRef({ onSelectPromo, onViewLevelChange });
 
-  useEffect(() => { callbackRef.current.onSelectPromo = onSelectPromo; }, [onSelectPromo]);
+  useEffect(() => {
+    callbackRef.current.onSelectPromo = onSelectPromo;
+    callbackRef.current.onViewLevelChange = onViewLevelChange;
+  }, [onSelectPromo, onViewLevelChange]);
+
+  useImperativeHandle(ref, () => ({
+    goOverview() {
+      const st = stateRef.current;
+      st.sunflower = null;
+      st.isZoomedIn = false;
+      st.sunflowerDots = [];
+      st.viewLevel = "overview";
+      st.camera.targetX = 0;
+      st.camera.targetY = 0;
+      st.camera.targetZoom = 0.5;
+      callbackRef.current.onViewLevelChange?.({ level: "overview" });
+      callbackRef.current.onSelectPromo?.(null);
+    },
+  }));
 
   useEffect(() => {
     const st = stateRef.current;
     st.phase = phase;
     st.animProgress = animProgress || 0;
-    if (data) {
-      st.layout = buildLayout(data);
-    } else {
-      st.layout = buildIdleLayout(50);
-    }
+    st.layout = data ? buildLayout(data) : buildIdleLayout(50);
     if (phase === "idle" || !data) {
-      st.camera.targetZoom = 0.55;
+      st.camera.targetZoom = 0.5;
       st.camera.targetX = 0;
       st.camera.targetY = 0;
     }
@@ -203,7 +221,7 @@ export default function RadialCanvas({ data, phase, onSelectPromo, selectedPromo
     function drawRadialGuides() {
       const c = w2s(0, 0);
       ctx.save();
-      [200, R_CLASS, R_STRIP_START, 750, 1000].forEach((r) => {
+      [200, R_CLASS, R_STRIP_START, 850, 1150].forEach((r) => {
         const sr = r * st.camera.zoom;
         if (sr < 4) return;
         ctx.beginPath();
@@ -212,17 +230,6 @@ export default function RadialCanvas({ data, phase, onSelectPromo, selectedPromo
         ctx.lineWidth = r === R_CLASS ? 1 : 0.5;
         ctx.stroke();
       });
-      if (st.camera.zoom > 0.25 && st.layout) {
-        st.layout.episodes.forEach((ep) => {
-          const far = w2s(ep.x * 2.6, ep.y * 2.6);
-          ctx.beginPath();
-          ctx.moveTo(c.x, c.y);
-          ctx.lineTo(far.x, far.y);
-          ctx.strokeStyle = "rgba(50,47,37,0.06)";
-          ctx.lineWidth = 0.5;
-          ctx.stroke();
-        });
-      }
       ctx.restore();
     }
 
@@ -281,6 +288,40 @@ export default function RadialCanvas({ data, phase, onSelectPromo, selectedPromo
       ctx.restore();
     }
 
+    // Thin fan lines from each episode node to its own promo strips —
+    // the dense interior web the hexbrain reference has, scoped per-episode
+    // so it doesn't become unreadable noise at overview zoom.
+    function drawFanLines() {
+      if (!st.layout || !st.layout.promoDots.length) return;
+      const revealFrac = st.phase === "scoring" ? st.animProgress : st.phase === "ranking" || st.phase === "complete" ? 1 : 0;
+      if (revealFrac <= 0) return;
+
+      ctx.save();
+      st.layout.promoDots.forEach((strip) => {
+        const ep = st.layout.episodes[strip.episodeIndex];
+        if (!ep) return;
+        const isHot = st.hovered.ep === strip.episodeIndex;
+        const baseShow = st.camera.zoom > 0.42;
+        if (!baseShow && !isHot) return;
+
+        const s1 = w2s(ep.x, ep.y);
+        const s2 = w2s(strip.centroidX, strip.centroidY);
+        const alpha = isHot ? 0.3 : 0.07;
+
+        ctx.globalAlpha = alpha * revealFrac;
+        ctx.beginPath();
+        ctx.moveTo(s1.x, s1.y);
+        const mx = (s1.x + s2.x) / 2 + (s2.y - s1.y) * 0.08;
+        const my = (s1.y + s2.y) / 2 - (s2.x - s1.x) * 0.08;
+        ctx.quadraticCurveTo(mx, my, s2.x, s2.y);
+        ctx.strokeStyle = isHot ? HOT : INK;
+        ctx.lineWidth = isHot ? 1 : 0.5;
+        ctx.stroke();
+      });
+      ctx.globalAlpha = 1;
+      ctx.restore();
+    }
+
     function drawStrips() {
       if (!st.layout || !st.layout.promoDots.length) return;
       const revealFrac = st.phase === "scoring" ? st.animProgress : st.phase === "ranking" || st.phase === "complete" ? 1 : 0;
@@ -302,23 +343,18 @@ export default function RadialCanvas({ data, phase, onSelectPromo, selectedPromo
 
         ctx.globalAlpha = baseAlpha * stripReveal;
 
+        // Soft glow highlight instead of a dashed box — a filled halo
+        // behind the strip, scaling with hover rather than a hard outline.
         if (isStripHot) {
-          const { ox, oy, stripW, stripH, cosA, sinA, tanX, tanY } = strip;
-          const corners = [
-            w2s(ox, oy),
-            w2s(ox + stripW * tanX, oy + stripW * tanY),
-            w2s(ox + stripW * tanX + stripH * cosA, oy + stripW * tanY + stripH * sinA),
-            w2s(ox + stripH * cosA, oy + stripH * sinA),
-          ];
+          const s = w2s(strip.centroidX, strip.centroidY);
+          const haloR = Math.max(strip.stripW, strip.stripH) * zoom * 0.9;
+          const grad = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, haloR);
+          grad.addColorStop(0, "rgba(255,106,61,0.22)");
+          grad.addColorStop(1, "transparent");
+          ctx.fillStyle = grad;
           ctx.beginPath();
-          ctx.moveTo(corners[0].x, corners[0].y);
-          corners.slice(1).forEach((c) => ctx.lineTo(c.x, c.y));
-          ctx.closePath();
-          ctx.setLineDash([4, 4]);
-          ctx.strokeStyle = HOT;
-          ctx.lineWidth = 1;
-          ctx.stroke();
-          ctx.setLineDash([]);
+          ctx.arc(s.x, s.y, haloR, 0, TWO_PI);
+          ctx.fill();
         }
 
         const sz = Math.max(DOT_SIZE * zoom, 1.2);
@@ -343,6 +379,19 @@ export default function RadialCanvas({ data, phase, onSelectPromo, selectedPromo
           }
         });
 
+        // Score badge beside the strip, always legible regardless of zoom.
+        if (zoom > 0.3) {
+          const bs = w2s(strip.centroidX, strip.centroidY);
+          const labelDist = Math.max(strip.stripW, strip.stripH) * zoom * 0.6 + 14;
+          const lx = bs.x + strip.cosA * labelDist;
+          const ly = bs.y + strip.sinA * labelDist;
+          ctx.font = `700 ${Math.max(11, 13 * Math.min(zoom, 1.3))}px 'Recursive',system-ui`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillStyle = isStripHot ? HOT : scoreNorm > 0.7 ? HOT : DIM;
+          ctx.fillText(strip.score, lx, ly);
+        }
+
         ctx.globalAlpha = 1;
       });
       ctx.restore();
@@ -360,16 +409,17 @@ export default function RadialCanvas({ data, phase, onSelectPromo, selectedPromo
         if (ci >= revealedCount && st.phase !== "idle") return;
 
         const s = w2s(ep.x, ep.y);
-        const r = ep.radius * Math.min(st.camera.zoom * 1.3, 1.1);
+        const r = ep.radius * Math.min(0.9 + st.camera.zoom * 0.5, 1.4);
         const isHot = st.hovered.ep === ci;
         const shouldFade = st.hovered.ep >= 0 && !isHot;
         const isIdle = st.phase === "idle";
+        const zoomedHere = st.viewLevel === "episode" && st.focusEp === ci;
 
         ctx.globalAlpha = isIdle ? 0.3 : (shouldFade ? 0.2 : 1);
 
-        if (isHot && st.camera.zoom > 0.25) {
+        if ((isHot || zoomedHere) && st.camera.zoom > 0.25) {
           const sectorAngle = (TWO_PI / totalEps) * 0.82;
-          const arcR = (R_STRIP_START - 30) * st.camera.zoom;
+          const arcR = (R_STRIP_START - 40) * st.camera.zoom;
           ctx.beginPath();
           ctx.arc(center.x, center.y, arcR, ep.angle - sectorAngle / 2, ep.angle + sectorAngle / 2);
           ctx.strokeStyle = "rgba(255,106,61,0.25)";
@@ -377,22 +427,12 @@ export default function RadialCanvas({ data, phase, onSelectPromo, selectedPromo
           ctx.stroke();
         }
 
-        if (isHot && st.camera.zoom > 0.3) {
-          ctx.save();
-          ctx.setLineDash([6, 6]);
-          ctx.strokeStyle = "rgba(255,106,61,0.15)";
-          ctx.lineWidth = 1;
-          ctx.beginPath(); ctx.moveTo(center.x, center.y); ctx.lineTo(s.x, s.y); ctx.stroke();
-          ctx.setLineDash([]);
-          ctx.restore();
-        }
-
         ctx.beginPath();
         ctx.arc(s.x, s.y, r, 0, TWO_PI);
         ctx.fillStyle = BG;
         ctx.fill();
-        ctx.lineWidth = isHot ? 2.5 : 1.5;
-        ctx.strokeStyle = isHot ? HOT : (ep.promoCount > 0 ? "rgba(255,106,61,0.4)" : LINE);
+        ctx.lineWidth = isHot || zoomedHere ? 2.5 : 1.5;
+        ctx.strokeStyle = isHot || zoomedHere ? HOT : (ep.promoCount > 0 ? "rgba(255,106,61,0.4)" : "#322f25");
         ctx.stroke();
 
         const ir = r * 0.72;
@@ -413,33 +453,33 @@ export default function RadialCanvas({ data, phase, onSelectPromo, selectedPromo
           ctx.fill();
         }
 
-        if (st.camera.zoom > 0.18) {
+        if (st.camera.zoom > 0.16) {
           const fSize = Math.max(7, Math.min(12, 13 * st.camera.zoom));
           ctx.font = `600 ${fSize}px 'Recursive',system-ui`;
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
           ctx.fillStyle = isHot ? HOT : INK;
-          ctx.fillText(`EP${ep.id}`, s.x, s.y);
+          ctx.fillText(ep.id.length > 3 ? ep.id.slice(0, 6).toUpperCase() : `EP${ep.id}`, s.x, s.y);
         }
 
-        if (st.camera.zoom > 0.35) {
-          const labelDist = r + 16;
+        // Full label + score summary only on hover/focus — keeps the
+        // overview from turning into a wall of overlapping text.
+        if ((isHot || zoomedHere) && st.camera.zoom > 0.2) {
+          const labelDist = r + 18;
           const lx = s.x + Math.cos(ep.angle) * labelDist;
           const ly = s.y + Math.sin(ep.angle) * labelDist;
-
           const normA = ((ep.angle % TWO_PI) + TWO_PI) % TWO_PI;
           ctx.textAlign = normA > Math.PI * 0.35 && normA < Math.PI * 1.65 ? "right" : "left";
           ctx.textBaseline = "middle";
 
-          const fz = Math.max(9, 11 * Math.min(st.camera.zoom, 1));
-          ctx.font = `500 ${fz}px 'Recursive',system-ui`;
-          ctx.fillStyle = isHot ? HOT : INK;
-          ctx.globalAlpha = isIdle ? 0.15 : (shouldFade ? 0.12 : (isHot ? 1 : 0.6));
+          const fz = 12;
+          ctx.font = `600 ${fz}px 'Recursive',system-ui`;
+          ctx.fillStyle = HOT;
           ctx.fillText(`Episode ${ep.id}`, lx, ly);
 
-          if (ep.promoCount > 0 && !isIdle) {
+          if (ep.promoCount > 0) {
             ctx.font = `400 ${fz - 1}px 'Recursive',system-ui`;
-            ctx.fillStyle = isHot ? HOT : DIM;
+            ctx.fillStyle = DIM;
             ctx.fillText(`${ep.promoCount} promos · best ${ep.maxScore}`, lx, ly + fz + 2);
           }
         }
@@ -449,39 +489,10 @@ export default function RadialCanvas({ data, phase, onSelectPromo, selectedPromo
       ctx.restore();
     }
 
-    function drawPromoLabels() {
-      if (!st.layout || st.camera.zoom < 0.5 || st.phase === "idle" || st.phase === "parsing") return;
-      ctx.save();
-      ctx.globalAlpha = Math.min(0.5, (st.camera.zoom - 0.5) * 0.8);
-      const fz = Math.max(8, 10 * Math.min(st.camera.zoom, 1.5));
-      ctx.font = `400 ${fz}px 'Recursive',monospace`;
-
-      st.layout.promoDots.forEach((strip) => {
-        if (st.hovered.ep >= 0 && st.hovered.ep !== strip.episodeIndex) return;
-        const lx = strip.ox + strip.stripH * 0.5 * strip.cosA + strip.stripW * 0.5 * strip.tanX;
-        const ly = strip.oy + strip.stripH * 0.5 * strip.sinA + strip.stripW * 0.5 * strip.tanY;
-        const s = w2s(lx, ly);
-        if (s.x < -50 || s.x > st.W + 50 || s.y < -50 || s.y > st.H + 50) return;
-
-        ctx.save();
-        ctx.translate(s.x, s.y);
-        let rot = strip.angle;
-        if (rot > Math.PI / 2 || rot < -Math.PI / 2) rot += Math.PI;
-        ctx.rotate(rot);
-        ctx.fillStyle = DIM;
-        ctx.textAlign = "center";
-        ctx.fillText(`P${strip.promoIndex + 1} · ${strip.score}pts`, 0, -strip.stripW * st.camera.zoom / 2 - 4);
-        ctx.restore();
-      });
-      ctx.restore();
-    }
-
     function drawSunflower() {
       if (!st.sunflower) return;
       const strip = st.sunflower;
-      const cx = strip.ox + strip.stripW / 2 * strip.tanX + strip.stripH / 2 * strip.cosA;
-      const cy = strip.oy + strip.stripW / 2 * strip.tanY + strip.stripH / 2 * strip.sinA;
-      const center = w2s(cx, cy);
+      const center = w2s(strip.centroidX, strip.centroidY);
 
       ctx.save();
       [60, 30, 10].forEach((r, i) => {
@@ -543,7 +554,7 @@ export default function RadialCanvas({ data, phase, onSelectPromo, selectedPromo
         ctx.fillText("KUKU PROMO FINDER", c.x, c.y - 16);
         ctx.font = "400 13px 'Recursive',system-ui";
         ctx.fillStyle = DIM;
-        ctx.fillText("Run the pipeline to map 50 episodes", c.x, c.y + 12);
+        ctx.fillText("Run the pipeline to map the episodes", c.x, c.y + 12);
       } else if (st.phase === "parsing") {
         const count = Math.ceil(st.animProgress * (st.layout?.episodes.length || 50));
         ctx.font = "700 32px 'Recursive',system-ui";
@@ -567,6 +578,15 @@ export default function RadialCanvas({ data, phase, onSelectPromo, selectedPromo
         ctx.font = "400 12px 'Recursive',system-ui";
         ctx.fillStyle = DIM;
         ctx.fillText("Cross-episode analysis", c.x, c.y + 14);
+      } else if (st.phase === "complete" && st.viewLevel === "overview" && st.layout) {
+        const top = st.layout.promoDots.reduce((m, s) => Math.max(m, s.score), 0);
+        ctx.font = "700 40px 'Recursive',system-ui";
+        ctx.fillStyle = INK;
+        ctx.globalAlpha = 0.9;
+        ctx.fillText(top || "—", c.x, c.y - 12);
+        ctx.font = "400 11px 'Recursive',system-ui";
+        ctx.fillStyle = DIM;
+        ctx.fillText("TOP SCORE", c.x, c.y + 16);
       }
 
       if (st.phase !== "idle") {
@@ -592,7 +612,7 @@ export default function RadialCanvas({ data, phase, onSelectPromo, selectedPromo
         for (let i = st.sunflowerDots.length - 1; i >= 0; i--) {
           const d = st.sunflowerDots[i];
           const dx = world.x - d.x, dy = world.y - d.y;
-          if (dx * dx + dy * dy < 20) {
+          if (dx * dx + dy * dy < 24) {
             st.hovered.dot = i;
             return;
           }
@@ -600,26 +620,27 @@ export default function RadialCanvas({ data, phase, onSelectPromo, selectedPromo
         return;
       }
 
-      for (let i = 0; i < st.layout.episodes.length; i++) {
-        const ep = st.layout.episodes[i];
-        const dx = world.x - ep.x, dy = world.y - ep.y;
-        if (dx * dx + dy * dy < ep.radius * ep.radius * 2.5) {
-          st.hovered.ep = i;
-          return;
-        }
-      }
-
-      if (st.camera.zoom > 0.25) {
+      if (st.camera.zoom > 0.22) {
         for (let i = 0; i < st.layout.promoDots.length; i++) {
           const strip = st.layout.promoDots[i];
           const rx = world.x - strip.ox, ry = world.y - strip.oy;
           const tangProj = rx * strip.tanX + ry * strip.tanY;
           const radProj = rx * strip.cosA + ry * strip.sinA;
-          if (tangProj >= -2 && tangProj <= strip.stripW + 2 && radProj >= -2 && radProj <= strip.stripH + 2) {
+          const pad = 6;
+          if (tangProj >= -pad && tangProj <= strip.stripW + pad && radProj >= -pad && radProj <= strip.stripH + pad) {
             st.hovered.strip = i;
             st.hovered.ep = strip.episodeIndex;
             return;
           }
+        }
+      }
+
+      for (let i = 0; i < st.layout.episodes.length; i++) {
+        const ep = st.layout.episodes[i];
+        const dx = world.x - ep.x, dy = world.y - ep.y;
+        if (dx * dx + dy * dy < ep.radius * ep.radius * 4.5) {
+          st.hovered.ep = i;
+          return;
         }
       }
     }
@@ -627,34 +648,46 @@ export default function RadialCanvas({ data, phase, onSelectPromo, selectedPromo
     function enterSunflower(strip) {
       st.sunflower = strip;
       st.isZoomedIn = true;
-      st.selectedStripIdx = st.layout.promoDots.indexOf(strip);
-      const cx = strip.ox + strip.stripW / 2 * strip.tanX + strip.stripH / 2 * strip.cosA;
-      const cy = strip.oy + strip.stripW / 2 * strip.tanY + strip.stripH / 2 * strip.sinA;
+      st.viewLevel = "sunflower";
 
       const spacing = 7;
       st.sunflowerDots = strip.dots.map((d, i) => {
         const angle = i * GOLDEN_ANGLE;
         const radius = spacing * Math.sqrt(i + 1);
-        return { ...d, x: cx + radius * Math.cos(angle), y: cy + radius * Math.sin(angle), radius, angle: angle, idx: i };
+        return { ...d, x: strip.centroidX + radius * Math.cos(angle), y: strip.centroidY + radius * Math.sin(angle), radius, angle, idx: i };
       });
 
-      st.camera.targetX = cx;
-      st.camera.targetY = cy;
-      st.camera.targetZoom = 3.5;
+      st.camera.targetX = strip.centroidX;
+      st.camera.targetY = strip.centroidY;
+      st.camera.targetZoom = 3.2;
+
+      callbackRef.current.onViewLevelChange?.({ level: "sunflower", episode: strip.episode, promo: strip.promo });
     }
 
-    function zoomOut() {
+    function enterEpisode(ep, idx) {
+      st.viewLevel = "episode";
+      st.focusEp = idx;
+      st.camera.targetX = ep.x;
+      st.camera.targetY = ep.y;
+      st.camera.targetZoom = 1.15;
+      callbackRef.current.onViewLevelChange?.({ level: "episode", episode: ep.id });
+    }
+
+    function goOverview() {
       st.sunflower = null;
       st.isZoomedIn = false;
-      st.selectedStripIdx = -1;
       st.sunflowerDots = [];
+      st.viewLevel = "overview";
       st.camera.targetX = 0;
       st.camera.targetY = 0;
-      st.camera.targetZoom = 0.55;
+      st.camera.targetZoom = 0.5;
+      callbackRef.current.onViewLevelChange?.({ level: "overview" });
+      callbackRef.current.onSelectPromo?.(null);
     }
 
     function onMouseDown(e) {
       st.isDragging = true;
+      st.dragMoved = false;
       st.dragStart = { x: e.clientX, y: e.clientY };
       canvas.style.cursor = "grabbing";
     }
@@ -666,6 +699,7 @@ export default function RadialCanvas({ data, phase, onSelectPromo, selectedPromo
       if (st.isDragging) {
         const dx = (e.clientX - st.dragStart.x) / st.camera.zoom;
         const dy = (e.clientY - st.dragStart.y) / st.camera.zoom;
+        if (Math.abs(e.clientX - st.dragStart.x) > 3 || Math.abs(e.clientY - st.dragStart.y) > 3) st.dragMoved = true;
         st.camera.targetX -= dx;
         st.camera.targetY -= dy;
         st.camera.x = st.camera.targetX;
@@ -673,25 +707,30 @@ export default function RadialCanvas({ data, phase, onSelectPromo, selectedPromo
         st.dragStart = { x: e.clientX, y: e.clientY };
       } else {
         hitTest(mx, my);
-        canvas.style.cursor = st.hovered.ep >= 0 || st.hovered.strip >= 0 || st.hovered.dot >= 0 ? "pointer" : "default";
+        canvas.style.cursor = st.hovered.ep >= 0 || st.hovered.strip >= 0 || st.hovered.dot >= 0 ? "pointer" : "grab";
       }
     }
     function onMouseUp() {
       st.isDragging = false;
-      canvas.style.cursor = "default";
+      canvas.style.cursor = "grab";
     }
-    function onClick() {
+    function onClick(e) {
       if (st.phase !== "complete") return;
-      if (st.isZoomedIn) return;
+      if (st.dragMoved) return;
+
+      const rect = canvas.getBoundingClientRect();
+      hitTest(e.clientX - rect.left, e.clientY - rect.top);
+
+      if (st.isZoomedIn) {
+        if (st.hovered.dot < 0) goOverview();
+        return;
+      }
       if (st.hovered.strip >= 0) {
-        const strip = st.layout.promoDots[st.hovered.strip];
-        enterSunflower(strip);
-        callbackRef.current.onSelectPromo?.(strip.promo);
+        enterSunflower(st.layout.promoDots[st.hovered.strip]);
       } else if (st.hovered.ep >= 0) {
-        const ep = st.layout.episodes[st.hovered.ep];
-        st.camera.targetX = ep.x;
-        st.camera.targetY = ep.y;
-        st.camera.targetZoom = 1.3;
+        enterEpisode(st.layout.episodes[st.hovered.ep], st.hovered.ep);
+      } else if (st.viewLevel !== "overview") {
+        goOverview();
       }
     }
     function onWheel(e) {
@@ -705,10 +744,7 @@ export default function RadialCanvas({ data, phase, onSelectPromo, selectedPromo
       st.camera.targetY += (world.y - st.camera.targetY) * (1 - 1 / f) * 0.3;
     }
     function onKeyDown(e) {
-      if (e.key === "Escape" && st.isZoomedIn) {
-        zoomOut();
-        callbackRef.current.onSelectPromo?.(null);
-      }
+      if (e.key === "Escape" && st.viewLevel !== "overview") goOverview();
     }
 
     function render() {
@@ -721,16 +757,14 @@ export default function RadialCanvas({ data, phase, onSelectPromo, selectedPromo
 
       drawRadialGuides();
       drawConnectors();
+      drawFanLines();
       if (st.isZoomedIn) {
         drawSunflower();
       } else {
         drawStrips();
       }
       drawEpisodeNodes();
-      if (!st.isZoomedIn) {
-        drawPromoLabels();
-        drawCenterInfo();
-      }
+      if (!st.isZoomedIn) drawCenterInfo();
 
       st.animId = requestAnimationFrame(render);
     }
@@ -743,6 +777,7 @@ export default function RadialCanvas({ data, phase, onSelectPromo, selectedPromo
     canvas.addEventListener("click", onClick);
     canvas.addEventListener("wheel", onWheel, { passive: false });
     document.addEventListener("keydown", onKeyDown);
+    canvas.style.cursor = "grab";
 
     st.animId = requestAnimationFrame(render);
 
@@ -759,4 +794,6 @@ export default function RadialCanvas({ data, phase, onSelectPromo, selectedPromo
   }, []);
 
   return <canvas ref={canvasRef} style={{ display: "block", width: "100%", height: "100%" }} />;
-}
+});
+
+export default RadialCanvas;

@@ -1,6 +1,10 @@
 {
   "rewrites": [
     { "source": "/api/pipeline", "destination": "/api/pipeline.py" },
+    { "source": "/api/youtube", "destination": "/api/youtube.py" },
     { "source": "/api/(.*)", "destination": "/api/index.js" }
-  ]
+  ],
+  "functions": {
+    "api/youtube.py": { "maxDuration": 60 }
+  }
 }
