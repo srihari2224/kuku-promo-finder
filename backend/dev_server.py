@@ -14,7 +14,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "pipeline"))
 from cli import run as run_pipeline  # noqa: E402
 from captions import cues_to_units, parse_vtt  # noqa: E402
-from scorer import find_promos  # noqa: E402
+from scorer import build_episode_cells, find_promos  # noqa: E402
 from transcribe import transcribe_file  # noqa: E402
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "api"))
@@ -94,10 +94,12 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 cues = transcribe_file(tmp_path)
                 units = cues_to_units(cues, source_id="upload")
-                promos = find_promos(units, "upload", cap=10)
+                promos, cands = find_promos(units, "upload", cap=10)
+                cells = build_episode_cells(units, promos, cands)
                 return self._respond({
                     "episode_count": 1, "unit_count": len(units),
                     "promo_count": len(promos), "promos": promos,
+                    "episode_cells": {"upload": cells},
                     "source": "upload", "title": fname,
                 })
             except Exception as ex:
@@ -134,10 +136,12 @@ class Handler(BaseHTTPRequestHandler):
                 return self._respond({"error": "No English captions found on that video."}, 422)
             cues = parse_vtt(vtt_text)
             units = cues_to_units(cues, source_id="youtube")
-            promos = find_promos(units, "youtube", cap=top_n)
+            promos, cands = find_promos(units, "youtube", cap=top_n)
+            cells = build_episode_cells(units, promos, cands)
             return self._respond({
                 "episode_count": 1, "unit_count": len(units),
                 "promo_count": len(promos), "promos": promos,
+                "episode_cells": {"youtube": cells},
                 "source": "youtube", "title": (info or {}).get("title", url),
             })
 

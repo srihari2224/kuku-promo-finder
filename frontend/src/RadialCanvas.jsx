@@ -1,4 +1,5 @@
 import { useRef, useEffect, forwardRef, useImperativeHandle } from "react";
+import { characterIndexFor, styleFor } from "./characters.js";
 
 const BG = "#13120e", INK = "#efe6d0", DIM = "#8f8874", HOT = "#ff6a3d", RED = "#ff3b30";
 const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
@@ -33,7 +34,10 @@ function buildLayout(data) {
     promosByEp[eid].push(p);
   });
 
-  const episodeIds = Object.keys(promosByEp).sort((a, b) => {
+  const cellsByEp = data.episode_cells || {};
+  const episodeIdsFromCells = Object.keys(cellsByEp);
+  const episodeIdsFromPromos = Object.keys(promosByEp);
+  const episodeIds = [...new Set([...episodeIdsFromCells, ...episodeIdsFromPromos])].sort((a, b) => {
     const na = parseInt(a, 10), nb = parseInt(b, 10);
     return isNaN(na) || isNaN(nb) ? a.localeCompare(b) : na - nb;
   });
@@ -45,64 +49,70 @@ function buildLayout(data) {
     for (let i = 1; i <= data.episode_count; i++) allEpisodeIds.push(String(i).padStart(2, "0"));
     episodeIds.forEach((id) => { if (!allEpisodeIds.includes(id)) allEpisodeIds.push(id); });
   } else {
-    allEpisodeIds = episodeIds;
+    allEpisodeIds = episodeIds.length ? episodeIds : [];
   }
 
   const N = allEpisodeIds.length;
   const angleStep = TWO_PI / N;
 
   const episodes = [];
-  const promoDots = [];
   const connections = [];
 
   allEpisodeIds.forEach((eid, ci) => {
     const angle = ci * angleStep - Math.PI / 2;
     const promos = promosByEp[eid] || [];
+    const rawCells = cellsByEp[eid] || cellsByEp[String(parseInt(eid, 10))] || [];
     const totalScore = promos.reduce((s, p) => s + p.score, 0);
     const nodeR = NODE_R_BASE + Math.min(promos.length * 2, 10);
 
+    // One grid of N cells per episode (plan 04 §1). Lays out as a
+    // near-square dot grid in the episode's angular sector, sized so it
+    // doesn't collide with the neighboring episode's grid tangentially.
+    const lineCount = rawCells.length;
+    const sectorArc = angleStep * R_STRIP_START;        // tangential px at strip radius
+    const maxColsBySpace = Math.max(3, Math.floor((sectorArc - 8) / DOT_PITCH));
+    const idealCols = Math.ceil(Math.sqrt(lineCount));
+    const cols = Math.max(3, Math.min(idealCols, maxColsBySpace));
+    const rows = Math.max(1, Math.ceil(lineCount / cols));
+    const stripW = cols * DOT_PITCH;
+    const stripH = rows * DOT_PITCH;
+
+    const cosA = Math.cos(angle), sinA = Math.sin(angle);
+    const tanX = -sinA, tanY = cosA;
+    const ox = R_STRIP_START * cosA - (stripW / 2) * tanX;
+    const oy = R_STRIP_START * sinA - (stripW / 2) * tanY;
+
+    const cells = rawCells.map((cell, ri) => {
+      const col = ri % cols;
+      const row = Math.floor(ri / cols);
+      return {
+        ...cell,
+        col, row,
+        wx: ox + col * DOT_PITCH * tanX + row * DOT_PITCH * cosA,
+        wy: oy + col * DOT_PITCH * tanY + row * DOT_PITCH * sinA,
+      };
+    });
+
+    // Attach the containing promo to each cell so clicking jumps to it.
+    promos.forEach((promo) => {
+      const [i, j] = promo.line_range || [-1, -1];
+      for (let k = i; k <= j; k++) {
+        if (cells[k]) cells[k].promo = promo;
+      }
+    });
+
     const ep = {
-      id: eid, index: ci, angle, x: R_CLASS * Math.cos(angle), y: R_CLASS * Math.sin(angle),
-      radius: nodeR, promoCount: promos.length, totalScore, promos, maxScore: Math.max(0, ...promos.map((p) => p.score)),
+      id: eid, index: ci, angle,
+      x: R_CLASS * Math.cos(angle), y: R_CLASS * Math.sin(angle),
+      radius: nodeR, promoCount: promos.length, totalScore, promos,
+      maxScore: Math.max(0, ...promos.map((p) => p.score)),
+      angle_cos: cosA, angle_sin: sinA, tanX, tanY,
+      stripW, stripH, cols, rows, ox, oy, cells,
+      centroidX: ox + (stripW / 2) * tanX + (stripH / 2) * cosA,
+      centroidY: oy + (stripW / 2) * tanY + (stripH / 2) * sinA,
+      charIndex: characterIndexFor(eid, cells),
     };
     episodes.push(ep);
-
-    let currentR = R_STRIP_START;
-    promos.forEach((promo, pi) => {
-      const segCount = promo.transcript ? promo.transcript.length : Math.max(3, Math.ceil(promo.duration / 4));
-      const cols = Math.min(Math.ceil(Math.sqrt(segCount) * 0.7), MAX_COLS);
-      const rows = Math.ceil(segCount / cols);
-      const stripW = cols * DOT_PITCH;
-      const stripH = rows * DOT_PITCH;
-
-      const cosA = Math.cos(angle), sinA = Math.sin(angle);
-      const tanX = -sinA, tanY = cosA;
-      const ox = currentR * cosA - (stripW / 2) * tanX;
-      const oy = currentR * sinA - (stripW / 2) * tanY;
-
-      const dots = [];
-      for (let ri = 0; ri < segCount; ri++) {
-        const col = ri % cols;
-        const row = Math.floor(ri / cols);
-        dots.push({
-          col, row,
-          wx: ox + col * DOT_PITCH * tanX + row * DOT_PITCH * cosA,
-          wy: oy + col * DOT_PITCH * tanY + row * DOT_PITCH * sinA,
-          seg: promo.transcript ? promo.transcript[ri] : null,
-        });
-      }
-
-      promoDots.push({
-        episode: eid, episodeIndex: ci, promoIndex: pi, promo,
-        angle, ox, oy, cosA, sinA, tanX, tanY,
-        stripW, stripH, cols, rows, dots, currentR,
-        centroidX: ox + (stripW / 2) * tanX + (stripH / 2) * cosA,
-        centroidY: oy + (stripW / 2) * tanY + (stripH / 2) * sinA,
-        score: promo.score,
-      });
-
-      currentR += stripH + STRIP_GAP_RADIAL;
-    });
   });
 
   // Cross-episode links, weighted by combined score rather than an
@@ -132,7 +142,7 @@ function buildLayout(data) {
     }
   }
 
-  return { episodes, promoDots, connections };
+  return { episodes, connections };
 }
 
 function buildIdleLayout(episodeCount) {
@@ -145,9 +155,21 @@ function buildIdleLayout(episodeCount) {
       id: String(i + 1).padStart(2, "0"), index: i, angle,
       x: R_CLASS * Math.cos(angle), y: R_CLASS * Math.sin(angle),
       radius: NODE_R_BASE, promoCount: 0, totalScore: 0, promos: [], maxScore: 0,
+      cells: [], cols: 0, rows: 0, stripW: 0, stripH: 0,
     });
   }
-  return { episodes, promoDots: [], connections: [] };
+  return { episodes, connections: [] };
+}
+
+// Helper — iterate every episode's cells. Used in several places that
+// used to iterate promoDots, now iterating cells across all episodes.
+function allCells(layout) {
+  const out = [];
+  if (!layout) return out;
+  for (const ep of layout.episodes) {
+    for (const c of ep.cells || []) out.push({ ep, cell: c });
+  }
+  return out;
 }
 
 const RadialCanvas = forwardRef(function RadialCanvas(
@@ -158,7 +180,7 @@ const RadialCanvas = forwardRef(function RadialCanvas(
   const svgRef = useRef(null);
   const stateRef = useRef({
     camera: { x: 0, y: 0, zoom: 0.5, targetX: 0, targetY: 0, targetZoom: 0.5 },
-    layout: null, hovered: { ep: -1, strip: -1, dot: -1 },
+    layout: null, hovered: { ep: -1, cellEp: -1, cellIdx: -1 },
     isDragging: false, dragMoved: false, dragStart: { x: 0, y: 0 },
     mouseScreen: { x: 0, y: 0 }, mouseWorld: { x: 0, y: 0 },
     isZoomedIn: false, sunflower: null, sunflowerDots: [],
@@ -184,8 +206,12 @@ const RadialCanvas = forwardRef(function RadialCanvas(
     focusPromo(promo) {
       const st = stateRef.current;
       if (!st.layout || !promo) return;
-      const strip = st.layout.promoDots.find((s) => s.promo === promo);
-      if (strip) actionsRef.current.enterSunflower?.(strip);
+      for (const ep of st.layout.episodes) {
+        if ((ep.promos || []).includes(promo)) {
+          actionsRef.current.enterPromo?.(ep, promo);
+          return;
+        }
+      }
     },
   }));
 
@@ -344,31 +370,32 @@ const RadialCanvas = forwardRef(function RadialCanvas(
       ctx.restore();
     }
 
-    // Thin fan lines from each episode node to its own promo strips —
-    // the dense interior web the hexbrain reference has, scoped per-episode
-    // so it doesn't become unreadable noise at overview zoom.
+    // Fan lines go from each episode node to its best-scoring promo's
+    // hook-line centroid — one per episode, scored. Dense but structured,
+    // the hexbrain pattern of "every strip's own column traces to the parent"
+    // but simplified to one line per episode so overview stays legible.
     function drawFanLines() {
-      if (!st.layout || !st.layout.promoDots.length) return;
-      const revealFrac = st.phase === "scoring" ? st.animProgress : st.phase === "ranking" || st.phase === "complete" ? 1 : 0;
+      if (!st.layout) return;
+      const revealFrac = st.phase === "scoring" ? st.animProgress
+        : st.phase === "ranking" || st.phase === "complete" ? 1 : 0;
       if (revealFrac <= 0) return;
 
       ctx.save();
-      st.layout.promoDots.forEach((strip) => {
-        const ep = st.layout.episodes[strip.episodeIndex];
-        if (!ep) return;
-        const isHot = st.hovered.ep === strip.episodeIndex;
-        const baseShow = st.camera.zoom > 0.42;
+      st.layout.episodes.forEach((ep, ci) => {
+        if (!ep.promos.length) return;
+        const isHot = st.hovered.ep === ci;
+        const baseShow = st.camera.zoom > 0.4;
         if (!baseShow && !isHot) return;
 
         const s1 = w2s(ep.x, ep.y);
-        const s2 = w2s(strip.centroidX, strip.centroidY);
-        const alpha = isHot ? 0.3 : 0.07;
+        const s2 = w2s(ep.centroidX, ep.centroidY);
+        const alpha = isHot ? 0.35 : 0.08;
 
         ctx.globalAlpha = alpha * revealFrac;
         ctx.beginPath();
         ctx.moveTo(s1.x, s1.y);
-        const mx = (s1.x + s2.x) / 2 + (s2.y - s1.y) * 0.08;
-        const my = (s1.y + s2.y) / 2 - (s2.x - s1.x) * 0.08;
+        const mx = (s1.x + s2.x) / 2 + (s2.y - s1.y) * 0.05;
+        const my = (s1.y + s2.y) / 2 - (s2.x - s1.x) * 0.05;
         ctx.quadraticCurveTo(mx, my, s2.x, s2.y);
         ctx.strokeStyle = isHot ? HOT : INK;
         ctx.lineWidth = isHot ? 1 : 0.5;
@@ -378,34 +405,38 @@ const RadialCanvas = forwardRef(function RadialCanvas(
       ctx.restore();
     }
 
-    function drawStrips() {
-      if (!st.layout || !st.layout.promoDots.length) return;
-      const revealFrac = st.phase === "scoring" ? st.animProgress : st.phase === "ranking" || st.phase === "complete" ? 1 : 0;
+    // Line-cell grid: one cell per transcript line per episode, colored
+    // by role (hook/cliff/connective/candidate/outside). This is the data
+    // density ask from plan 04 §1 — every line visible, not just the
+    // final-picked promo windows.
+    function drawCells() {
+      if (!st.layout) return;
+      const revealFrac = st.phase === "scoring" ? st.animProgress
+        : st.phase === "ranking" || st.phase === "complete" ? 1 : 0;
       if (revealFrac <= 0) return;
 
       ctx.save();
       const zoom = st.camera.zoom;
-      const totalStrips = st.layout.promoDots.length;
-      const revealedCount = Math.ceil(revealFrac * totalStrips);
+      const episodes = st.layout.episodes;
+      const totalEps = episodes.length;
+      const revealedCount = Math.ceil(revealFrac * totalEps);
 
-      st.layout.promoDots.forEach((strip, si) => {
-        if (si >= revealedCount) return;
-        const stripReveal = si < revealedCount - 1 ? 1 : (revealFrac * totalStrips - si);
+      episodes.forEach((ep, ci) => {
+        if (ci >= revealedCount) return;
+        if (!ep.cells.length) return;
 
-        const isEpHot = st.hovered.ep === strip.episodeIndex;
-        const isStripHot = st.hovered.strip === si;
+        const isEpHot = st.hovered.ep === ci;
         const shouldFade = st.hovered.ep >= 0 && !isEpHot;
-        const baseAlpha = shouldFade ? 0.08 : (isStripHot ? 1 : 0.75);
+        const groupAlpha = shouldFade ? 0.12 : 1;
+        const stripReveal = ci < revealedCount - 1 ? 1 : (revealFrac * totalEps - ci);
 
-        ctx.globalAlpha = baseAlpha * stripReveal;
+        ctx.globalAlpha = groupAlpha * stripReveal;
 
-        // Soft glow highlight instead of a dashed box — a filled halo
-        // behind the strip, scaling with hover rather than a hard outline.
-        if (isStripHot) {
-          const s = w2s(strip.centroidX, strip.centroidY);
-          const haloR = Math.max(strip.stripW, strip.stripH) * zoom * 0.9;
+        if (isEpHot && ep.cells.length) {
+          const s = w2s(ep.centroidX, ep.centroidY);
+          const haloR = Math.max(ep.stripW, ep.stripH) * zoom * 0.9;
           const grad = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, haloR);
-          grad.addColorStop(0, "rgba(255,106,61,0.22)");
+          grad.addColorStop(0, "rgba(255,106,61,0.18)");
           grad.addColorStop(1, "transparent");
           ctx.fillStyle = grad;
           ctx.beginPath();
@@ -413,14 +444,23 @@ const RadialCanvas = forwardRef(function RadialCanvas(
           ctx.fill();
         }
 
-        const sz = Math.max(DOT_SIZE * zoom, 1.2);
-        const scoreNorm = strip.score / 100;
+        const sz = Math.max(DOT_SIZE * zoom, 1.4);
 
-        strip.dots.forEach((d, di) => {
-          const s = w2s(d.wx, d.wy);
+        ep.cells.forEach((c, ci2) => {
+          const s = w2s(c.wx, c.wy);
           if (s.x < -10 || s.x > st.W + 10 || s.y < -10 || s.y > st.H + 10) return;
 
-          if (di === st.hovered.dot && si === st.hovered.strip) {
+          const isHovered = st.hovered.cellEp === ci && st.hovered.cellIdx === ci2;
+          let fill;
+          switch (c.role) {
+            case "hook":       fill = HOT; break;
+            case "cliff":      fill = RED; break;
+            case "connective": fill = `rgba(255,106,61,${0.35 + 0.004 * (c.best_points || 0)})`; break;
+            case "candidate":  fill = `rgba(239,230,208,${0.5 + 0.015 * (c.best_points || 0)})`; break;
+            default:           fill = "rgba(239,230,208,0.35)";
+          }
+
+          if (isHovered) {
             ctx.save();
             ctx.shadowBlur = 8;
             ctx.shadowColor = HOT;
@@ -428,29 +468,44 @@ const RadialCanvas = forwardRef(function RadialCanvas(
             ctx.globalAlpha = 1;
             ctx.fillRect(s.x - sz, s.y - sz, sz * 2, sz * 2);
             ctx.restore();
-            ctx.globalAlpha = baseAlpha * stripReveal;
+            ctx.globalAlpha = groupAlpha * stripReveal;
           } else {
-            // Grey by default, same as hexbrainai.com's report dots — hue
-            // is reserved for hover/selection state, not score magnitude.
-            // Score is already legible from the badge text beside the strip.
-            ctx.fillStyle = isStripHot ? `rgba(255,106,61,${0.4 + scoreNorm * 0.4})` : INK;
+            ctx.fillStyle = fill;
             ctx.fillRect(s.x - sz / 2, s.y - sz / 2, sz, sz);
+          }
+
+          // Character glyph badge — plan 04 §3. Only once cells are big
+          // enough to carry a legible initial; collision-filtered so a
+          // dense dialogue run doesn't smear glyphs into each other.
+          if (zoom > 0.85 && c.type === "dialogue" && c.speaker) {
+            const style = styleFor(ep.charIndex, c.speaker);
+            if (style) {
+              queueLabel({
+                x: s.x, y: s.y - sz, text: style.glyph, align: "center",
+                fontSize: Math.max(7, 8 * zoom), weight: 700,
+                color: style.color, priority: isHovered ? 980 : 60,
+              });
+            }
           }
         });
 
-        // Score badge beside the strip, always legible regardless of zoom.
-        // Collision-filtered (see flushLabels) so dense clusters drop the
-        // lower-scoring badges instead of stacking illegible text.
+        // Per-episode score badges — one per picked promo, placed near
+        // the hook cell of that promo so the number is anchored to the
+        // actual line it represents, not the strip centroid.
         if (zoom > 0.3) {
-          const bs = w2s(strip.centroidX, strip.centroidY);
-          const labelDist = Math.max(strip.stripW, strip.stripH) * zoom * 0.6 + 14;
-          const lx = bs.x + strip.cosA * labelDist;
-          const ly = bs.y + strip.sinA * labelDist;
-          queueLabel({
-            x: lx, y: ly, text: strip.score, align: "center",
-            fontSize: Math.max(11, 13 * Math.min(zoom, 1.3)), weight: 700,
-            color: isStripHot ? HOT : DIM,
-            priority: isStripHot ? 900 : 100 + strip.score,
+          ep.promos.forEach((promo) => {
+            const i = promo.receipt?.hook_line_index;
+            if (i == null || !ep.cells[i]) return;
+            const cell = ep.cells[i];
+            const s = w2s(cell.wx, cell.wy);
+            const lx = s.x + ep.angle_cos * 12 * zoom;
+            const ly = s.y + ep.angle_sin * 12 * zoom;
+            queueLabel({
+              x: lx, y: ly, text: promo.score, align: "center",
+              fontSize: Math.max(10, 12 * Math.min(zoom, 1.3)), weight: 700,
+              color: isEpHot ? HOT : DIM,
+              priority: isEpHot ? 950 : 100 + promo.score,
+            });
           });
         }
 
@@ -583,7 +638,7 @@ const RadialCanvas = forwardRef(function RadialCanvas(
         const s = w2s(d.x, d.y);
         if (s.x < -20 || s.x > st.W + 20 || s.y < -20 || s.y > st.H + 20) return;
         const sz = Math.max(3 * st.camera.zoom, 2);
-        const isHov = st.hovered.dot === i && st.isZoomedIn;
+        const isHov = st.hovered.sunflowerIdx === i && st.isZoomedIn;
         if (isHov) {
           ctx.save();
           ctx.shadowBlur = 10;
@@ -596,6 +651,18 @@ const RadialCanvas = forwardRef(function RadialCanvas(
           ctx.fillStyle = type === "dialogue" ? INK : type === "action" ? HOT : type === "sound_fx" ? RED : DIM;
           ctx.fillRect(s.x - sz / 2, s.y - sz / 2, sz, sz);
         }
+
+        if (d.seg?.type === "dialogue" && d.seg?.speaker) {
+          const ep = st.layout?.episodes.find((e) => e.id === strip.episode);
+          const style = ep && styleFor(ep.charIndex, d.seg.speaker);
+          if (style) {
+            queueLabel({
+              x: s.x, y: s.y - sz - 2, text: style.glyph, align: "center",
+              fontSize: Math.max(8, 9 * st.camera.zoom * 0.3), weight: 700,
+              color: style.color, priority: isHov ? 980 : 70,
+            });
+          }
+        }
       });
       ctx.restore();
 
@@ -604,11 +671,11 @@ const RadialCanvas = forwardRef(function RadialCanvas(
       const hy = center.y - outerR;
       ctx.textAlign = "center";
       ctx.font = "400 11px Recursive,system-ui"; ctx.fillStyle = DIM;
-      ctx.fillText(`EP${strip.episode} · PROMO ${strip.promoIndex + 1}`, center.x, hy);
+      ctx.fillText(`EP${strip.episode} · PROMO ${(strip.promo.promo_index ?? 0) + 1}`, center.x, hy);
       ctx.font = "600 18px Recursive,system-ui"; ctx.fillStyle = INK;
       ctx.fillText(strip.promo.hook.slice(0, 60) + (strip.promo.hook.length > 60 ? "..." : ""), center.x, hy + 18);
       ctx.font = "500 13px Recursive,system-ui"; ctx.fillStyle = HOT;
-      ctx.fillText(`Score ${strip.score} · ${strip.promo.duration}s`, center.x, hy + 36);
+      ctx.fillText(`Score ${strip.promo.score} · ${strip.promo.duration}s`, center.x, hy + 36);
       ctx.restore();
     }
 
@@ -635,13 +702,14 @@ const RadialCanvas = forwardRef(function RadialCanvas(
         ctx.fillStyle = DIM;
         ctx.fillText("EPISODES PARSED", c.x, c.y + 14);
       } else if (st.phase === "scoring") {
-        const count = Math.ceil(st.animProgress * (st.layout?.promoDots.length || 0));
+        const totalLines = (st.layout?.episodes || []).reduce((s, e) => s + e.cells.length, 0);
+        const count = Math.ceil(st.animProgress * totalLines);
         ctx.font = "700 32px 'Recursive',system-ui";
         ctx.fillStyle = HOT;
         ctx.fillText(count, c.x, c.y - 10);
         ctx.font = "400 12px 'Recursive',system-ui";
         ctx.fillStyle = DIM;
-        ctx.fillText("PROMOS SCORED", c.x, c.y + 14);
+        ctx.fillText("LINES SCORED", c.x, c.y + 14);
       } else if (st.phase === "ranking") {
         ctx.font = "700 32px 'Recursive',system-ui";
         ctx.fillStyle = HOT;
@@ -650,7 +718,7 @@ const RadialCanvas = forwardRef(function RadialCanvas(
         ctx.fillStyle = DIM;
         ctx.fillText("Cross-episode analysis", c.x, c.y + 14);
       } else if (st.phase === "complete" && st.viewLevel === "overview" && st.layout) {
-        const top = st.layout.promoDots.reduce((m, s) => Math.max(m, s.score), 0);
+        const top = st.layout.episodes.reduce((m, e) => Math.max(m, e.maxScore), 0);
         ctx.font = "700 40px 'Recursive',system-ui";
         ctx.fillStyle = INK;
         ctx.globalAlpha = 0.9;
@@ -676,7 +744,7 @@ const RadialCanvas = forwardRef(function RadialCanvas(
 
     function hitTest(mx, my) {
       const world = s2w(mx, my);
-      st.hovered = { ep: -1, strip: -1, dot: -1 };
+      st.hovered = { ep: -1, cellEp: -1, cellIdx: -1, sunflowerIdx: -1 };
       if (!st.layout) return;
 
       if (st.isZoomedIn && st.sunflowerDots.length) {
@@ -684,7 +752,7 @@ const RadialCanvas = forwardRef(function RadialCanvas(
           const d = st.sunflowerDots[i];
           const dx = world.x - d.x, dy = world.y - d.y;
           if (dx * dx + dy * dy < 24) {
-            st.hovered.dot = i;
+            st.hovered.sunflowerIdx = i;
             return;
           }
         }
@@ -692,15 +760,26 @@ const RadialCanvas = forwardRef(function RadialCanvas(
       }
 
       if (st.camera.zoom > 0.22) {
-        for (let i = 0; i < st.layout.promoDots.length; i++) {
-          const strip = st.layout.promoDots[i];
-          const rx = world.x - strip.ox, ry = world.y - strip.oy;
-          const tangProj = rx * strip.tanX + ry * strip.tanY;
-          const radProj = rx * strip.cosA + ry * strip.sinA;
+        for (let ei = 0; ei < st.layout.episodes.length; ei++) {
+          const ep = st.layout.episodes[ei];
+          if (!ep.cells.length) continue;
+          const rx = world.x - ep.ox, ry = world.y - ep.oy;
+          const tangProj = rx * ep.tanX + ry * ep.tanY;
+          const radProj = rx * ep.angle_cos + ry * ep.angle_sin;
           const pad = 6;
-          if (tangProj >= -pad && tangProj <= strip.stripW + pad && radProj >= -pad && radProj <= strip.stripH + pad) {
-            st.hovered.strip = i;
-            st.hovered.ep = strip.episodeIndex;
+          if (tangProj >= -pad && tangProj <= ep.stripW + pad && radProj >= -pad && radProj <= ep.stripH + pad) {
+            st.hovered.ep = ei;
+            // At zoom ≥ 1 we're close enough to pick individual cells —
+            // otherwise just treat the whole strip as a group hover.
+            if (st.camera.zoom > 0.9) {
+              const col = Math.max(0, Math.min(ep.cols - 1, Math.floor(tangProj / DOT_PITCH)));
+              const row = Math.max(0, Math.min(ep.rows - 1, Math.floor(radProj / DOT_PITCH)));
+              const idx = row * ep.cols + col;
+              if (idx < ep.cells.length) {
+                st.hovered.cellEp = ei;
+                st.hovered.cellIdx = idx;
+              }
+            }
             return;
           }
         }
@@ -716,23 +795,28 @@ const RadialCanvas = forwardRef(function RadialCanvas(
       }
     }
 
-    function enterSunflower(strip) {
-      st.sunflower = strip;
+    function enterPromo(ep, promo) {
+      const [i, j] = promo.line_range || [0, 0];
+      const cellsInRange = ep.cells.slice(i, j + 1);
+      const cx = cellsInRange.reduce((s, c) => s + c.wx, 0) / (cellsInRange.length || 1);
+      const cy = cellsInRange.reduce((s, c) => s + c.wy, 0) / (cellsInRange.length || 1);
+
+      st.sunflower = { episode: ep.id, promo, centroidX: cx, centroidY: cy };
       st.isZoomedIn = true;
       st.viewLevel = "sunflower";
 
       const spacing = 7;
-      st.sunflowerDots = strip.dots.map((d, i) => {
-        const angle = i * GOLDEN_ANGLE;
-        const radius = spacing * Math.sqrt(i + 1);
-        return { ...d, x: strip.centroidX + radius * Math.cos(angle), y: strip.centroidY + radius * Math.sin(angle), radius, angle, idx: i };
+      st.sunflowerDots = cellsInRange.map((d, i2) => {
+        const angle = i2 * GOLDEN_ANGLE;
+        const radius = spacing * Math.sqrt(i2 + 1);
+        return { ...d, seg: d, x: cx + radius * Math.cos(angle), y: cy + radius * Math.sin(angle), radius, angle, idx: i2 };
       });
 
-      st.camera.targetX = strip.centroidX;
-      st.camera.targetY = strip.centroidY;
+      st.camera.targetX = cx;
+      st.camera.targetY = cy;
       st.camera.targetZoom = 3.2;
 
-      callbackRef.current.onViewLevelChange?.({ level: "sunflower", episode: strip.episode, promo: strip.promo });
+      callbackRef.current.onViewLevelChange?.({ level: "sunflower", episode: ep.id, promo });
     }
 
     function enterEpisode(ep, idx) {
@@ -740,7 +824,7 @@ const RadialCanvas = forwardRef(function RadialCanvas(
       st.focusEp = idx;
       st.camera.targetX = ep.x;
       st.camera.targetY = ep.y;
-      st.camera.targetZoom = 1.15;
+      st.camera.targetZoom = 1.4; // >0.9 so per-cell hover/glyphs kick in immediately
       callbackRef.current.onViewLevelChange?.({ level: "episode", episode: ep.id });
     }
 
@@ -756,7 +840,7 @@ const RadialCanvas = forwardRef(function RadialCanvas(
       callbackRef.current.onSelectPromo?.(null);
     }
 
-    actionsRef.current = { enterSunflower, enterEpisode, goOverview };
+    actionsRef.current = { enterPromo, enterEpisode, goOverview };
 
     function onMouseDown(e) {
       st.isDragging = true;
@@ -780,7 +864,8 @@ const RadialCanvas = forwardRef(function RadialCanvas(
         st.dragStart = { x: e.clientX, y: e.clientY };
       } else {
         hitTest(mx, my);
-        canvas.style.cursor = st.hovered.ep >= 0 || st.hovered.strip >= 0 || st.hovered.dot >= 0 ? "pointer" : "grab";
+        const canHit = st.hovered.ep >= 0 || st.hovered.cellIdx >= 0 || st.hovered.sunflowerIdx >= 0;
+        canvas.style.cursor = canHit ? "pointer" : "grab";
       }
     }
     function onMouseUp() {
@@ -795,12 +880,21 @@ const RadialCanvas = forwardRef(function RadialCanvas(
       hitTest(e.clientX - rect.left, e.clientY - rect.top);
 
       if (st.isZoomedIn) {
-        if (st.hovered.dot < 0) goOverview();
+        if (st.hovered.sunflowerIdx < 0) goOverview();
         return;
       }
-      if (st.hovered.strip >= 0) {
-        enterSunflower(st.layout.promoDots[st.hovered.strip]);
-      } else if (st.hovered.ep >= 0) {
+      // Clicked a specific cell inside a chosen promo → jump straight
+      // into that promo's sunflower view. Clicked a non-promo cell →
+      // zoom into the episode so you can see that cell in context.
+      if (st.hovered.cellIdx >= 0 && st.hovered.cellEp >= 0) {
+        const ep = st.layout.episodes[st.hovered.cellEp];
+        const cell = ep.cells[st.hovered.cellIdx];
+        if (cell.promo) {
+          enterPromo(ep, cell.promo);
+          return;
+        }
+      }
+      if (st.hovered.ep >= 0) {
         enterEpisode(st.layout.episodes[st.hovered.ep], st.hovered.ep);
       } else if (st.viewLevel !== "overview") {
         goOverview();
@@ -834,7 +928,7 @@ const RadialCanvas = forwardRef(function RadialCanvas(
       if (st.isZoomedIn) {
         drawSunflower();
       } else {
-        drawStrips();
+        drawCells();
       }
       drawEpisodeNodes();
       if (!st.isZoomedIn) drawCenterInfo();

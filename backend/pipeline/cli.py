@@ -12,12 +12,15 @@ from scorer import rank_all
 
 def run(folder, top_n=20, cap_per_episode=5):
     units_by_episode = parse_folder(folder)
-    top = rank_all(units_by_episode, cap_per_episode=cap_per_episode, top_n=top_n)
+    top, cells_by_ep = rank_all(
+        units_by_episode, cap_per_episode=cap_per_episode, top_n=top_n
+    )
     return {
         "episode_count": len(units_by_episode),
         "unit_count": sum(len(u) for u in units_by_episode.values()),
         "promo_count": len(top),
         "promos": top,
+        "episode_cells": cells_by_ep,
     }
 
 

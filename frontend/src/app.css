@@ -2,11 +2,15 @@
   height: 100%;
   display: grid;
   grid-template-rows: 56px 1fr;
-  grid-template-columns: 1fr 340px;
+  grid-template-columns: 1fr 0px 340px;
   grid-template-areas:
-    "nav nav"
-    "stage rail";
+    "nav nav nav"
+    "stage detail rail";
   background: var(--bg);
+  transition: grid-template-columns 220ms ease-out;
+}
+.shell.panel-open {
+  grid-template-columns: 1fr 380px 340px;
 }
 
 .nav {
@@ -17,7 +21,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--space-16);
   padding: 0 var(--space-24);
+  overflow: hidden;
   z-index: 20;
 }
 
@@ -25,6 +31,8 @@
   font-weight: 700;
   letter-spacing: -0.3px;
   font-size: 16px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .brand .hot { color: var(--hot); }
 
@@ -36,6 +44,8 @@
   gap: var(--space-8);
   letter-spacing: 0.5px;
   text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .phase-dot {
@@ -154,16 +164,23 @@
   margin-bottom: var(--space-8);
 }
 .character-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.character-chip {
+
+/* CharacterGlyph-driven chips — color comes from each character's own
+   deterministic palette slot (characters.js), not a single fixed hue,
+   so the chip here matches the glyph badge on the canvas cell exactly. */
+.char-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   font-size: 11px;
   font-weight: 600;
-  color: var(--hot);
-  background: rgba(255, 106, 61, 0.1);
-  border: 1px solid rgba(255, 106, 61, 0.3);
+  background: var(--bg);
+  border: 1px solid var(--line);
   border-radius: var(--radius-tag);
-  padding: 3px 8px;
-  text-transform: uppercase;
+  padding: 3px 8px 3px 5px;
 }
+.char-chip-name { color: var(--ink); text-transform: uppercase; }
+.char-chip.selected { border-color: var(--hot); }
 
 .control-dock {
   position: absolute;
@@ -319,40 +336,24 @@
   overflow: hidden;
 }
 
-.detail-panel {
-  position: fixed;
-  top: 56px;
-  right: 340px;
-  bottom: 0;
-  width: 420px;
-  background: rgba(19, 18, 14, 0.96);
-  border-left: 1px solid var(--line);
-  backdrop-filter: blur(16px);
-  z-index: 25;
-  padding: var(--space-24);
-  overflow-y: auto;
-  animation: slideIn 200ms ease-out;
-}
-@keyframes slideIn {
-  from { transform: translateX(20px); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
-}
-
-.detail-close {
-  position: absolute;
-  top: var(--space-16);
-  right: var(--space-16);
+/* Docked side column — same pattern hexbrainai.com's #detail-panel uses:
+   a permanent part of the layout the canvas resizes around, not an
+   overlay floating on top of it. No backdrop, no close button — the
+   existing Back [Esc] control is the one way in and out. */
+.detail-column {
+  grid-area: detail;
   background: var(--raise);
-  border: 1px solid var(--line);
-  border-radius: 50%;
-  width: 28px;
-  height: 28px;
-  color: var(--ink);
-  font-size: 12px;
+  border-left: 1px solid var(--line);
+  overflow-y: auto;
+  padding: var(--space-24) var(--space-16);
+  min-width: 0;
+  min-height: 0; /* grid items don't shrink below content size by default —
+                    without this the column grows to fit the transcript
+                    instead of scrolling internally, pushing the whole
+                    page (nav included) into a page-level scroll. */
 }
-.detail-close:hover { border-color: var(--hot); color: var(--hot); }
 
-.detail-meta { margin-top: var(--space-24); }
+.detail-meta { margin-top: var(--space-16); }
 .promo-line { font-size: 14px; margin-bottom: var(--space-8); line-height: 1.4; }
 .promo-line .tag {
   font-size: 10px;
@@ -368,6 +369,52 @@
   color: var(--dim);
   margin-top: var(--space-12);
   font-style: italic;
+}
+
+/* ───────── Score receipt ───────── */
+.receipt {
+  margin-top: var(--space-16);
+  padding-top: var(--space-16);
+  border-top: 1px solid var(--line);
+}
+.receipt-title {
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin-bottom: var(--space-8);
+}
+.receipt-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+  font-variation-settings: "MONO" 1;
+}
+.receipt-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-12);
+  padding: 3px 0;
+}
+.receipt-label { color: var(--dim); flex: 1; }
+.receipt-points { color: var(--ink); text-align: right; min-width: 36px; }
+.receipt-base .receipt-label, .receipt-base .receipt-points { color: var(--dim); }
+.receipt-hook .receipt-points { color: var(--hot); }
+.receipt-cliff .receipt-points { color: var(--red); }
+.receipt-penalty .receipt-points { color: var(--red); }
+.receipt-total {
+  border-top: 1px solid var(--line);
+  margin-top: 4px;
+  padding-top: 6px;
+  font-weight: 700;
+}
+.receipt-total .receipt-label, .receipt-total .receipt-points { color: var(--ink); }
+.receipt-lines {
+  margin-top: var(--space-8);
+  font-size: 10px;
+  color: var(--dim);
+  font-variation-settings: "MONO" 1;
 }
 
 /* ───────── Lyrics player ───────── */
@@ -488,5 +535,5 @@
       "stage";
   }
   .rail { display: none; }
-  .detail-panel { right: 0; width: 100%; }
+  .detail-column { position: fixed; inset: 56px 0 0 0; z-index: 25; width: auto; }
 }

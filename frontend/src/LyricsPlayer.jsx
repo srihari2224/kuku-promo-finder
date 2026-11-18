@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect } from "react";
+import CharacterGlyph from "./CharacterGlyph.jsx";
+import { styleFor } from "./characters.js";
 
 function fmtTime(s) {
   const m = Math.floor(s / 60);
@@ -6,7 +8,7 @@ function fmtTime(s) {
   return `${m}:${sec}`;
 }
 
-export default function LyricsPlayer({ promo }) {
+export default function LyricsPlayer({ promo, charIndex }) {
   const [playing, setPlaying] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const rafRef = useRef(null);
@@ -102,7 +104,12 @@ export default function LyricsPlayer({ promo }) {
               onClick={() => setElapsed(Math.max(0, u.start - segStart))}
             >
               <span className="lyrics-time-tag">{fmtTime(u.start - segStart)}</span>
-              {isDialogue && u.speaker && <span className="lyrics-speaker">{u.speaker}</span>}
+              {isDialogue && u.speaker && (
+                <span className="lyrics-speaker">
+                  <CharacterGlyph style={styleFor(charIndex, u.speaker)} size={14} />
+                  {u.speaker}
+                </span>
+              )}
               <span className="lyrics-text">{u.text}</span>
               {u.emotion && <span className="lyrics-emotion">({u.emotion})</span>}
             </div>

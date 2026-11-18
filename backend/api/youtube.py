@@ -15,7 +15,7 @@ from http.server import BaseHTTPRequestHandler
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "pipeline"))
 from captions import cues_to_units, parse_vtt  # noqa: E402
-from scorer import find_promos  # noqa: E402
+from scorer import build_episode_cells, find_promos  # noqa: E402
 
 import yt_dlp  # noqa: E402
 
@@ -111,13 +111,15 @@ class handler(BaseHTTPRequestHandler):
 
         cues = parse_vtt(vtt_text)
         units = cues_to_units(cues, source_id="youtube")
-        promos = find_promos(units, "youtube", cap=top_n)
+        promos, cands = find_promos(units, "youtube", cap=top_n)
+        cells = build_episode_cells(units, promos, cands)
 
         self._respond({
             "episode_count": 1,
             "unit_count": len(units),
             "promo_count": len(promos),
             "promos": promos,
+            "episode_cells": {"youtube": cells},
             "source": "youtube",
             "title": (info or {}).get("title", url),
         })

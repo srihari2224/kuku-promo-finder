@@ -2,6 +2,9 @@ import { useState, useRef, useCallback } from "react";
 import { BACKEND_URL } from "./config.js";
 import RadialCanvas from "./RadialCanvas.jsx";
 import LyricsPlayer from "./LyricsPlayer.jsx";
+import ScoreReceipt from "./ScoreReceipt.jsx";
+import { CharacterChip } from "./CharacterGlyph.jsx";
+import { characterIndexFor, styleFor } from "./characters.js";
 
 const PHASE_LABELS = {
   idle: "Idle",
@@ -16,6 +19,15 @@ function uniqueSpeakers(promo) {
   const seen = new Set();
   promo.transcript.forEach((u) => { if (u.speaker) seen.add(u.speaker); });
   return [...seen];
+}
+
+function cellsForEpisode(data, episodeId) {
+  if (!data?.episode_cells) return [];
+  return (
+    data.episode_cells[episodeId] ||
+    data.episode_cells[String(parseInt(episodeId, 10))] ||
+    []
+  );
 }
 
 export default function App() {
@@ -178,8 +190,12 @@ export default function App() {
   if (viewLevel.level === "sunflower") breadcrumb.push(`EP${viewLevel.episode}`, "Promo window");
   const showBack = viewLevel.level !== "overview";
 
+  const activeCells = selectedPromo ? cellsForEpisode(data, selectedPromo.episode) : [];
+  const activeCharIndex = selectedPromo ? characterIndexFor(selectedPromo.episode, activeCells) : null;
+  const activeSpeakers = uniqueSpeakers(selectedPromo);
+
   return (
-    <div className="shell">
+    <div className={`shell ${panelOpen ? "panel-open" : ""}`}>
       <nav className="nav">
         <div className="brand">
           KUKU <span className="hot">PROMO FINDER</span>
@@ -346,22 +362,22 @@ export default function App() {
       )}
 
       {panelOpen && selectedPromo && (
-        <div className="detail-panel">
-          <button className="detail-close" onClick={() => { setPanelOpen(false); goBack(); }}>✕</button>
-          <LyricsPlayer promo={selectedPromo} />
-          {uniqueSpeakers(selectedPromo).length > 0 && (
+        <div className="detail-column">
+          <LyricsPlayer promo={selectedPromo} charIndex={activeCharIndex} />
+
+          <ScoreReceipt promo={selectedPromo} />
+
+          {activeSpeakers.length > 0 && (
             <div className="character-row">
               <span className="tag">Characters</span>
               <div className="character-chips">
-                {uniqueSpeakers(selectedPromo).map((s) => (
-                  <span className="character-chip" key={s}>{s}</span>
+                {activeSpeakers.map((s) => (
+                  <CharacterChip key={s} style={styleFor(activeCharIndex, s)} />
                 ))}
               </div>
             </div>
           )}
           <div className="detail-meta">
-            <div className="promo-line"><span className="tag">Hook</span>{selectedPromo.hook}</div>
-            <div className="promo-line"><span className="tag">Cliffhanger</span>{selectedPromo.cliffhanger}</div>
             <div className="promo-why">{selectedPromo.why}</div>
           </div>
         </div>
