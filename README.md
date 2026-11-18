@@ -52,10 +52,16 @@ assignment's scope (see `plans/03`).
 ## What's actually built vs. documented
 
 - **Built:** the script-folder input path — parses the 50 bundled episode
-  `.txt` files, scores every candidate window, ranks the top promos.
-- **Documented, not built:** YouTube/MP4 input, MongoDB knowledge model,
-  the Canvas2D radial visualization. See `plans/01` and `plans/02` for why
-  and how, if those get built next.
+  `.txt` files, scores every candidate window, ranks the top promos; a
+  Canvas2D radial map (episodes as rings, scored windows as dot strips,
+  cross-episode bezier links for promos scoring ≥60) with an animated
+  parse → score → rank pipeline reveal; a karaoke-style lyrics player that
+  scrubs/scrolls the promo's transcript line by line.
+- **Documented, not built:** YouTube/MP4 input (transcription needs a
+  long-running worker — ffmpeg + Whisper — which Vercel's serverless
+  functions can't host; the UI shows these modes with that constraint
+  explained inline) and the MongoDB knowledge model. See `plans/01` and
+  `plans/02` for why and how, if those get built next.
 
 ## Raw outputs
 

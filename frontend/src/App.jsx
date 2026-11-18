@@ -1,21 +1,75 @@
-import { useMemo, useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { BACKEND_URL } from "./config.js";
+import RadialCanvas from "./RadialCanvas.jsx";
+import LyricsPlayer from "./LyricsPlayer.jsx";
 
-function fmtTime(s) {
-  const m = Math.floor(s / 60);
-  const sec = (s % 60).toFixed(1).padStart(4, "0");
-  return `${m}:${sec}`;
-}
+const PHASES = ["idle", "parsing", "scoring", "ranking", "complete"];
+const PHASE_LABELS = {
+  idle: "Idle",
+  parsing: "Parsing screenplays",
+  scoring: "Scoring candidate windows",
+  ranking: "Cross-episode ranking",
+  complete: "Done",
+};
 
 export default function App() {
+  const [mode, setMode] = useState("script"); // script | youtube | upload
   const [status, setStatus] = useState("idle"); // idle | loading | ready | error
   const [error, setError] = useState(null);
   const [data, setData] = useState(null);
+  const [phase, setPhase] = useState("idle");
+  const [phaseProgress, setPhaseProgress] = useState(0);
+  const [selectedPromo, setSelectedPromo] = useState(null);
   const [sortDir, setSortDir] = useState("desc");
+  const [panelOpen, setPanelOpen] = useState(false);
+  const animRef = useRef(null);
+
+  const youtubeDisabled = mode === "youtube";
+  const uploadDisabled = mode === "upload";
+
+  const runAnimatedPhases = useCallback((resultData) => {
+    const episodeCount = resultData.episode_count || 50;
+    const promoCount = resultData.promo_count || resultData.promos.length;
+
+    const sequence = [
+      { phase: "parsing", duration: 1100 },
+      { phase: "scoring", duration: 1400 },
+      { phase: "ranking", duration: 900 },
+    ];
+
+    let seqIdx = 0;
+    let phaseStart = performance.now();
+
+    function step(now) {
+      const cur = sequence[seqIdx];
+      const t = Math.min(1, (now - phaseStart) / cur.duration);
+      setPhase(cur.phase);
+      setPhaseProgress(t);
+
+      if (t >= 1) {
+        seqIdx += 1;
+        if (seqIdx >= sequence.length) {
+          setPhase("complete");
+          setPhaseProgress(1);
+          setStatus("ready");
+          return;
+        }
+        phaseStart = now;
+      }
+      animRef.current = requestAnimationFrame(step);
+    }
+    animRef.current = requestAnimationFrame(step);
+  }, []);
 
   async function runPipeline() {
     setStatus("loading");
     setError(null);
+    setData(null);
+    setSelectedPromo(null);
+    setPanelOpen(false);
+    setPhase("idle");
+    setPhaseProgress(0);
+
     try {
       const res = await fetch(`${BACKEND_URL}/api/pipeline`, {
         method: "POST",
@@ -28,123 +82,158 @@ export default function App() {
       }
       const json = await res.json();
       setData(json);
-      setStatus("ready");
+      runAnimatedPhases(json);
     } catch (e) {
       setError(e.message || "Something went wrong talking to the backend.");
       setStatus("error");
+      setPhase("idle");
     }
   }
 
-  const sortedPromos = useMemo(() => {
-    if (!data) return [];
-    const list = [...data.promos];
-    list.sort((a, b) => (sortDir === "desc" ? b.score - a.score : a.score - b.score));
-    return list;
-  }, [data, sortDir]);
+  function handleSelectPromo(promo) {
+    setSelectedPromo(promo);
+    setPanelOpen(!!promo);
+  }
+
+  const sortedPromos = data
+    ? [...data.promos].sort((a, b) => (sortDir === "desc" ? b.score - a.score : a.score - b.score))
+    : [];
 
   return (
-    <div>
+    <div className="shell">
       <nav className="nav">
         <div className="brand">
           KUKU <span className="hot">PROMO FINDER</span>
         </div>
+        <div className="nav-phase">
+          <span className={`phase-dot ${status === "loading" ? "spin" : ""}`} />
+          {PHASE_LABELS[phase]}
+        </div>
       </nav>
 
-      <div className="page">
-        <h1 className="h1">Find the Promos</h1>
-        <p className="body-text">
-          Runs the rule-based scorer across every episode's screenplay and ranks the
-          strongest 20–60s promo candidates — hook, cliffhanger, and why each one works.
-        </p>
+      <div className="canvas-stage">
+        <RadialCanvas
+          data={data}
+          phase={phase}
+          animProgress={phaseProgress}
+          onSelectPromo={handleSelectPromo}
+          selectedPromo={selectedPromo}
+        />
 
-        <div className="input-row">
-          <div className="input-card enabled">
-            <h3>Script folder</h3>
-            <p>50 episodes of "I Married a Broken Soldier" — bundled with this backend.</p>
+        <div className="hud-overlay">
+          <div className="hud-left">
+            <p className="hud-desc">
+              Each ring is an episode. Dot strips are scored 20–60s promo candidates — glow intensity
+              is score. Click a strip to open its window; click an episode to zoom. Bezier arcs link
+              episodes whose top promo scores ≥60, suggesting cross-episode promo stitching.
+            </p>
           </div>
-          <div className="input-card disabled">
-            <h3>YouTube link</h3>
-            <p>Not built in this submission — see plans/01 for the design.</p>
-          </div>
-          <div className="input-card disabled">
-            <h3>Upload MP4</h3>
-            <p>Not built in this submission — see plans/01 for the design.</p>
+          <div className="hud-right">
+            {data && (
+              <>
+                <div className="stat"><span className="val">{data.episode_count}</span><span className="lbl">episodes</span></div>
+                <div className="stat"><span className="val">{data.unit_count}</span><span className="lbl">units</span></div>
+                <div className="stat"><span className="val">{data.promo_count}</span><span className="lbl">promos</span></div>
+                <div className="stat"><span className="val">{sortedPromos[0]?.score ?? "—"}</span><span className="lbl">top score</span></div>
+              </>
+            )}
           </div>
         </div>
 
-        <button className="btn btn-primary" onClick={runPipeline} disabled={status === "loading"}>
-          {status === "loading" ? "Running pipeline…" : "Run pipeline"}
-        </button>
+        <div className="control-dock">
+          <div className="input-row">
+            <button
+              className={`input-card ${mode === "script" ? "active" : ""}`}
+              onClick={() => setMode("script")}
+            >
+              <h3>Script folder</h3>
+              <p>50 bundled episodes — parsed server-side.</p>
+            </button>
+            <button
+              className={`input-card ${mode === "youtube" ? "active" : ""} ${youtubeDisabled ? "coming-soon" : ""}`}
+              onClick={() => setMode("youtube")}
+            >
+              <h3>YouTube link</h3>
+              <p>Transcribe + score a public video. Paste a URL below.</p>
+            </button>
+            <button
+              className={`input-card ${mode === "upload" ? "active" : ""} ${uploadDisabled ? "coming-soon" : ""}`}
+              onClick={() => setMode("upload")}
+            >
+              <h3>Upload MP4</h3>
+              <p>Whisper-transcribe an uploaded clip, then score it.</p>
+            </button>
+          </div>
 
-        {status === "error" && <div className="error-box">{error}</div>}
+          {mode === "script" && (
+            <button className="btn btn-primary btn-run" onClick={runPipeline} disabled={status === "loading"}>
+              {status === "loading" ? "Running pipeline…" : "Run pipeline on 50 episodes"}
+            </button>
+          )}
 
-        {data && (
-          <>
-            <div className="stat-row">
-              <div className="stat-card">
-                <div className="num">{data.episode_count}</div>
-                <div className="label">Episodes</div>
-              </div>
-              <div className="stat-card">
-                <div className="num">{data.unit_count}</div>
-                <div className="label">Script units</div>
-              </div>
-              <div className="stat-card">
-                <div className="num">{data.promo_count}</div>
-                <div className="label">Promos found</div>
-              </div>
-              <div className="stat-card">
-                <div className="num">{sortedPromos[0]?.score ?? "—"}</div>
-                <div className="label">Top score</div>
+          {mode === "youtube" && (
+            <div className="mode-fallback">
+              <input className="mode-input" placeholder="https://youtube.com/watch?v=..." disabled />
+              <div className="mode-note">
+                Needs yt-dlp + Whisper on the server, which Vercel's serverless runtime can't host reliably
+                (no persistent ffmpeg binary, 10s cold-start budget). Built and tested locally in ClipCut;
+                not wired into this deployment — see plans/01 for the design.
               </div>
             </div>
+          )}
 
-            <div className="sort-row">
-              <span className="body-text" style={{ margin: 0 }}>
-                Ranked promos
-              </span>
-              <button
-                className="sort-toggle"
-                onClick={() => setSortDir((d) => (d === "desc" ? "asc" : "desc"))}
-              >
-                Sort: {sortDir === "desc" ? "Highest first ↓" : "Lowest first ↑"}
-              </button>
+          {mode === "upload" && (
+            <div className="mode-fallback">
+              <input className="mode-input" type="file" accept="video/mp4" disabled />
+              <div className="mode-note">
+                Same constraint as YouTube: transcription needs a long-running worker, not a serverless
+                function. Works in the local ClipCut pipeline; not wired into this deployment.
+              </div>
             </div>
+          )}
 
+          {status === "error" && <div className="error-box">{error}</div>}
+        </div>
+      </div>
+
+      {data && status === "ready" && (
+        <div className="rail">
+          <div className="rail-header">
+            <span>Ranked promos</span>
+            <button className="sort-toggle" onClick={() => setSortDir((d) => (d === "desc" ? "asc" : "desc"))}>
+              {sortDir === "desc" ? "Highest ↓" : "Lowest ↑"}
+            </button>
+          </div>
+          <div className="rail-list">
             {sortedPromos.map((p, idx) => (
-              <div className="promo-card" key={`${p.episode}-${idx}`}>
-                <div className="promo-top">
-                  <div>
-                    <div className="promo-ep">Episode {p.episode}</div>
-                  </div>
-                  <div className="promo-score">{p.score}</div>
+              <div
+                className={`rail-card ${selectedPromo === p ? "selected" : ""}`}
+                key={`${p.episode}-${idx}`}
+                onClick={() => handleSelectPromo(p)}
+              >
+                <div className="rail-top">
+                  <span className="rail-ep">EP{p.episode}</span>
+                  <span className="rail-score">{p.score}</span>
                 </div>
-                <div className="meter-track">
-                  <div className="meter-fill" style={{ width: `${p.score}%` }} />
-                </div>
-                {p.segments.map((seg, i) => (
-                  <div className="body-text" key={i} style={{ margin: 0 }}>
-                    {fmtTime(seg.start)} → {fmtTime(seg.end)} · {p.duration}s
-                  </div>
-                ))}
-                <div className="promo-line" style={{ marginTop: "12px" }}>
-                  <span className="tag">Hook</span>
-                  {p.hook}
-                </div>
-                <div className="promo-line">
-                  <span className="tag">Cliffhanger</span>
-                  {p.cliffhanger}
-                </div>
-                <div className="promo-why">{p.why}</div>
+                <div className="meter-track"><div className="meter-fill" style={{ width: `${p.score}%` }} /></div>
+                <div className="rail-hook">{p.hook}</div>
               </div>
             ))}
-          </>
-        )}
+          </div>
+        </div>
+      )}
 
-        {!data && status !== "loading" && status !== "error" && (
-          <div className="empty-hint">Click "Run pipeline" to score all 50 episodes.</div>
-        )}
-      </div>
+      {panelOpen && selectedPromo && (
+        <div className="detail-panel">
+          <button className="detail-close" onClick={() => setPanelOpen(false)}>✕</button>
+          <LyricsPlayer promo={selectedPromo} />
+          <div className="detail-meta">
+            <div className="promo-line"><span className="tag">Hook</span>{selectedPromo.hook}</div>
+            <div className="promo-line"><span className="tag">Cliffhanger</span>{selectedPromo.cliffhanger}</div>
+            <div className="promo-why">{selectedPromo.why}</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

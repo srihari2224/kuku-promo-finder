@@ -139,6 +139,13 @@ def find_promos(units, episode_id, cap=5):
             "cliffhanger": cliff_unit["text"][:140],
             "why": info["why"],
             "duration": round(info["duration"], 1),
+            "info": {"hook_score": round(info["hook"]), "cliff_score": round(info["cliff"])},
+            "transcript": [
+                {"start": u["start"], "end": u["end"], "type": u["type"],
+                 "speaker": u.get("speaker", ""), "text": u["text"],
+                 "emotion": u.get("emotion", "")}
+                for u in units[i:j + 1]
+            ],
         })
     out.sort(key=lambda c: -c["score"])
     return out
