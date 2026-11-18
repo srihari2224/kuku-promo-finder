@@ -21,27 +21,42 @@ import yt_dlp  # noqa: E402
 
 
 def _fetch_captions(url):
-    with tempfile.TemporaryDirectory() as tmp:
-        opts = {
-            "skip_download": True,
-            "writesubtitles": True,
-            "writeautomaticsub": True,
-            "subtitleslangs": ["en", "en-US", "en-GB"],
-            "subtitlesformat": "vtt",
-            "outtmpl": os.path.join(tmp, "%(id)s.%(ext)s"),
-            "quiet": True,
-            "no_warnings": True,
-            "noplaylist": True,
-        }
-        with yt_dlp.YoutubeDL(opts) as ydl:
-            info = ydl.extract_info(url, download=True)
+    # The "web" player client makes yt-dlp look like a browser hitting
+    # YouTube from Vercel's datacenter IPs, which trips YouTube's bot
+    # check ("Sign in to confirm you're not a bot"). The "android" client
+    # uses a different auth flow that isn't gated the same way — it's the
+    # one that actually works from serverless. ios/web are fallbacks for
+    # the rare video android can't serve (e.g. DRM-restricted formats).
+    last_err = None
+    for client in ("android", "ios", "web"):
+        with tempfile.TemporaryDirectory() as tmp:
+            opts = {
+                "skip_download": True,
+                "writesubtitles": True,
+                "writeautomaticsub": True,
+                "subtitleslangs": ["en", "en-US", "en-GB"],
+                "subtitlesformat": "vtt",
+                "outtmpl": os.path.join(tmp, "%(id)s.%(ext)s"),
+                "quiet": True,
+                "no_warnings": True,
+                "noplaylist": True,
+                "extractor_args": {"youtube": {"player_client": [client]}},
+            }
+            try:
+                with yt_dlp.YoutubeDL(opts) as ydl:
+                    info = ydl.extract_info(url, download=True)
+            except Exception as ex:
+                last_err = ex
+                continue
 
-        vtt_files = glob.glob(os.path.join(tmp, "*.vtt"))
-        if not vtt_files:
-            return None, info
-        with open(vtt_files[0], encoding="utf-8") as f:
-            text = f.read()
-        return text, info
+            vtt_files = glob.glob(os.path.join(tmp, "*.vtt"))
+            if not vtt_files:
+                return None, info
+            with open(vtt_files[0], encoding="utf-8") as f:
+                text = f.read()
+            return text, info
+
+    raise last_err or RuntimeError("Couldn't fetch video info with any player client.")
 
 
 class handler(BaseHTTPRequestHandler):
@@ -78,7 +93,15 @@ class handler(BaseHTTPRequestHandler):
         try:
             vtt_text, info = _fetch_captions(url)
         except Exception as ex:
-            return self._respond({"error": f"Couldn't fetch that video: {ex}"}, 500)
+            msg = str(ex)
+            if "not a bot" in msg or "Sign in to confirm" in msg:
+                return self._respond({
+                    "error": "YouTube is blocking this request because it's coming from Vercel's "
+                             "datacenter IPs, not a real browser — that's YouTube's bot defense, not "
+                             "a bug here. It works from a normal residential connection; fixing it in "
+                             "production would need a proxy service in front of yt-dlp.",
+                }, 502)
+            return self._respond({"error": f"Couldn't fetch that video: {msg}"}, 500)
 
         if not vtt_text:
             return self._respond({

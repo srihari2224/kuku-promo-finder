@@ -105,23 +105,28 @@ function buildLayout(data) {
     });
   });
 
+  // Cross-episode links, weighted by combined score rather than an
+  // all-or-nothing threshold — this is what gives hexbrainai.com's map its
+  // dense "hairball" interior instead of a handful of isolated arcs.
   srand(99);
-  const highScoreEps = episodes.filter((e) => e.maxScore >= 60);
-  for (let i = 0; i < highScoreEps.length; i++) {
-    for (let j = i + 1; j < highScoreEps.length; j++) {
-      if (rand() < 0.35) {
-        const src = highScoreEps[i], dst = highScoreEps[j];
+  const activeEps = episodes.filter((e) => e.promoCount > 0);
+  for (let i = 0; i < activeEps.length; i++) {
+    for (let j = i + 1; j < activeEps.length; j++) {
+      const src = activeEps[i], dst = activeEps[j];
+      const combined = (src.maxScore + dst.maxScore) / 200;
+      const prob = combined * combined * 0.65;
+      if (rand() < prob) {
         const mx = (src.x + dst.x) * 0.15;
         const my = (src.y + dst.y) * 0.15;
         const perp = Math.atan2(dst.y - src.y, dst.x - src.x) + Math.PI / 2;
         const offset = (rand() - 0.5) * 160;
         connections.push({
-          srcIdx: src.index, dstIdx: dst.index,
+          srcIdx: src.index, dstIdx: dst.index, brightness: combined,
           cp1: { x: mx + offset * Math.cos(perp), y: my + offset * Math.sin(perp) },
           cp2: { x: mx - offset * 0.4 * Math.cos(perp), y: my - offset * 0.4 * Math.sin(perp) },
-          particles: Array.from({ length: 1 + Math.floor(rand() * 2) }, () => ({
+          particles: combined > 0.6 ? Array.from({ length: 1 + Math.floor(rand() * 2) }, () => ({
             t: rand(), speed: 0.0006 + rand() * 0.0012,
-          })),
+          })) : [],
         });
       }
     }
@@ -150,6 +155,7 @@ const RadialCanvas = forwardRef(function RadialCanvas(
   ref
 ) {
   const canvasRef = useRef(null);
+  const svgRef = useRef(null);
   const stateRef = useRef({
     camera: { x: 0, y: 0, zoom: 0.5, targetX: 0, targetY: 0, targetZoom: 0.5 },
     layout: null, hovered: { ep: -1, strip: -1, dot: -1 },
@@ -161,6 +167,7 @@ const RadialCanvas = forwardRef(function RadialCanvas(
     viewLevel: "overview",
   });
   const callbackRef = useRef({ onSelectPromo, onViewLevelChange });
+  const actionsRef = useRef({});
 
   useEffect(() => {
     callbackRef.current.onSelectPromo = onSelectPromo;
@@ -169,16 +176,16 @@ const RadialCanvas = forwardRef(function RadialCanvas(
 
   useImperativeHandle(ref, () => ({
     goOverview() {
+      actionsRef.current.goOverview?.();
+    },
+    // Lets the ranked-promo list drive the map the way hexbrainai.com's
+    // weakness list drives its canvas — clicking a rail card should move
+    // the camera and open the same sunflower view a canvas click would.
+    focusPromo(promo) {
       const st = stateRef.current;
-      st.sunflower = null;
-      st.isZoomedIn = false;
-      st.sunflowerDots = [];
-      st.viewLevel = "overview";
-      st.camera.targetX = 0;
-      st.camera.targetY = 0;
-      st.camera.targetZoom = 0.5;
-      callbackRef.current.onViewLevelChange?.({ level: "overview" });
-      callbackRef.current.onSelectPromo?.(null);
+      if (!st.layout || !promo) return;
+      const strip = st.layout.promoDots.find((s) => s.promo === promo);
+      if (strip) actionsRef.current.enterSunflower?.(strip);
     },
   }));
 
@@ -209,6 +216,7 @@ const RadialCanvas = forwardRef(function RadialCanvas(
       canvas.style.width = st.W + "px";
       canvas.style.height = st.H + "px";
       ctx.setTransform(st.dpr, 0, 0, st.dpr, 0, 0);
+      if (svgRef.current) svgRef.current.setAttribute("viewBox", `0 0 ${st.W} ${st.H}`);
     }
 
     function w2s(wx, wy) {
@@ -216,6 +224,53 @@ const RadialCanvas = forwardRef(function RadialCanvas(
     }
     function s2w(sx, sy) {
       return { x: (sx - st.W / 2) / st.camera.zoom + st.camera.x, y: (sy - st.H / 2) / st.camera.zoom + st.camera.y };
+    }
+
+    // Text goes through an SVG overlay instead of canvas fillText — real
+    // DOM text antialiases far more crisply than canvas text at the sizes
+    // and zoom levels this map runs at (this is what hexbrainai.com does
+    // too: canvas for the graphics layer, SVG <text> for every label).
+    // Labels queue up during the draw pass, then run through a greedy
+    // collision filter so overlapping labels drop instead of smearing —
+    // that's the fix for score badges and episode names piling up.
+    let labelQueue = [];
+    function queueLabel(l) { labelQueue.push(l); }
+
+    function estimateWidth(text, fontSize, weight) {
+      ctx.font = `${weight || 400} ${fontSize}px 'Recursive',system-ui`;
+      return ctx.measureText(String(text)).width;
+    }
+
+    function flushLabels() {
+      const svg = svgRef.current;
+      if (!svg) { labelQueue = []; return; }
+
+      const sorted = [...labelQueue].sort((a, b) => b.priority - a.priority);
+      const boxes = [];
+      const accepted = [];
+      for (const l of sorted) {
+        const w = estimateWidth(l.text, l.fontSize, l.weight) + 4;
+        const h = l.fontSize * 1.35;
+        let x0, x1;
+        if (l.align === "center") { x0 = l.x - w / 2; x1 = l.x + w / 2; }
+        else if (l.align === "right") { x0 = l.x - w; x1 = l.x; }
+        else { x0 = l.x; x1 = l.x + w; }
+        const y0 = l.y - h / 2, y1 = l.y + h / 2;
+        if (!l.skipCollision) {
+          const hit = boxes.some((b) => !(x1 < b.x0 || x0 > b.x1 || y1 < b.y0 || y0 > b.y1));
+          if (hit) continue;
+        }
+        boxes.push({ x0, x1, y0, y1 });
+        accepted.push(l);
+      }
+
+      svg.innerHTML = accepted.map((l) => (
+        `<text x="${l.x.toFixed(1)}" y="${l.y.toFixed(1)}" font-size="${l.fontSize}" ` +
+        `font-weight="${l.weight || 400}" text-anchor="${l.align || "left"}" ` +
+        `dominant-baseline="middle" fill="${l.color}" opacity="${l.opacity ?? 1}" ` +
+        `font-family="Recursive,system-ui">${l.text}</text>`
+      )).join("");
+      labelQueue = [];
     }
 
     function drawRadialGuides() {
@@ -250,7 +305,8 @@ const RadialCanvas = forwardRef(function RadialCanvas(
         const dst = st.layout.episodes[conn.dstIdx];
         if (!src || !dst) return;
         const isHot = st.hovered.ep === conn.srcIdx || st.hovered.ep === conn.dstIdx;
-        const alpha = st.hovered.ep >= 0 ? (isHot ? 0.5 : 0.02) : 0.1;
+        const ambient = 0.03 + conn.brightness * 0.14;
+        const alpha = st.hovered.ep >= 0 ? (isHot ? 0.5 : ambient * 0.3) : ambient;
 
         const s1 = w2s(src.x, src.y), s2 = w2s(dst.x, dst.y);
         const sc1 = w2s(conn.cp1.x, conn.cp1.y), sc2 = w2s(conn.cp2.x, conn.cp2.y);
@@ -380,16 +436,19 @@ const RadialCanvas = forwardRef(function RadialCanvas(
         });
 
         // Score badge beside the strip, always legible regardless of zoom.
+        // Collision-filtered (see flushLabels) so dense clusters drop the
+        // lower-scoring badges instead of stacking illegible text.
         if (zoom > 0.3) {
           const bs = w2s(strip.centroidX, strip.centroidY);
           const labelDist = Math.max(strip.stripW, strip.stripH) * zoom * 0.6 + 14;
           const lx = bs.x + strip.cosA * labelDist;
           const ly = bs.y + strip.sinA * labelDist;
-          ctx.font = `700 ${Math.max(11, 13 * Math.min(zoom, 1.3))}px 'Recursive',system-ui`;
-          ctx.textAlign = "center";
-          ctx.textBaseline = "middle";
-          ctx.fillStyle = isStripHot ? HOT : scoreNorm > 0.7 ? HOT : DIM;
-          ctx.fillText(strip.score, lx, ly);
+          queueLabel({
+            x: lx, y: ly, text: strip.score, align: "center",
+            fontSize: Math.max(11, 13 * Math.min(zoom, 1.3)), weight: 700,
+            color: isStripHot ? HOT : scoreNorm > 0.7 ? HOT : DIM,
+            priority: isStripHot ? 900 : 100 + strip.score,
+          });
         }
 
         ctx.globalAlpha = 1;
@@ -455,11 +514,12 @@ const RadialCanvas = forwardRef(function RadialCanvas(
 
         if (st.camera.zoom > 0.16) {
           const fSize = Math.max(7, Math.min(12, 13 * st.camera.zoom));
-          ctx.font = `600 ${fSize}px 'Recursive',system-ui`;
-          ctx.textAlign = "center";
-          ctx.textBaseline = "middle";
-          ctx.fillStyle = isHot ? HOT : INK;
-          ctx.fillText(ep.id.length > 3 ? ep.id.slice(0, 6).toUpperCase() : `EP${ep.id}`, s.x, s.y);
+          queueLabel({
+            x: s.x, y: s.y, align: "center", fontSize: fSize, weight: 600,
+            color: isHot ? HOT : INK,
+            text: ep.id.length > 3 ? ep.id.slice(0, 6).toUpperCase() : `EP${ep.id}`,
+            priority: 800, skipCollision: true,
+          });
         }
 
         // Full label + score summary only on hover/focus — keeps the
@@ -469,18 +529,18 @@ const RadialCanvas = forwardRef(function RadialCanvas(
           const lx = s.x + Math.cos(ep.angle) * labelDist;
           const ly = s.y + Math.sin(ep.angle) * labelDist;
           const normA = ((ep.angle % TWO_PI) + TWO_PI) % TWO_PI;
-          ctx.textAlign = normA > Math.PI * 0.35 && normA < Math.PI * 1.65 ? "right" : "left";
-          ctx.textBaseline = "middle";
-
+          const align = normA > Math.PI * 0.35 && normA < Math.PI * 1.65 ? "right" : "left";
           const fz = 12;
-          ctx.font = `600 ${fz}px 'Recursive',system-ui`;
-          ctx.fillStyle = HOT;
-          ctx.fillText(`Episode ${ep.id}`, lx, ly);
 
+          queueLabel({
+            x: lx, y: ly, align, fontSize: fz, weight: 600, color: HOT,
+            text: `Episode ${ep.id}`, priority: 1000, skipCollision: true,
+          });
           if (ep.promoCount > 0) {
-            ctx.font = `400 ${fz - 1}px 'Recursive',system-ui`;
-            ctx.fillStyle = DIM;
-            ctx.fillText(`${ep.promoCount} promos · best ${ep.maxScore}`, lx, ly + fz + 2);
+            queueLabel({
+              x: lx, y: ly + fz + 2, align, fontSize: fz - 1, weight: 400, color: DIM,
+              text: `${ep.promoCount} promos · best ${ep.maxScore}`, priority: 1000, skipCollision: true,
+            });
           }
         }
 
@@ -685,6 +745,8 @@ const RadialCanvas = forwardRef(function RadialCanvas(
       callbackRef.current.onSelectPromo?.(null);
     }
 
+    actionsRef.current = { enterSunflower, enterEpisode, goOverview };
+
     function onMouseDown(e) {
       st.isDragging = true;
       st.dragMoved = false;
@@ -765,6 +827,7 @@ const RadialCanvas = forwardRef(function RadialCanvas(
       }
       drawEpisodeNodes();
       if (!st.isZoomedIn) drawCenterInfo();
+      flushLabels();
 
       st.animId = requestAnimationFrame(render);
     }
@@ -793,7 +856,15 @@ const RadialCanvas = forwardRef(function RadialCanvas(
     };
   }, []);
 
-  return <canvas ref={canvasRef} style={{ display: "block", width: "100%", height: "100%" }} />;
+  return (
+    <div style={{ position: "relative", width: "100%", height: "100%" }}>
+      <canvas ref={canvasRef} style={{ display: "block", width: "100%", height: "100%" }} />
+      <svg
+        ref={svgRef}
+        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none", overflow: "hidden" }}
+      />
+    </div>
+  );
 });
 
 export default RadialCanvas;

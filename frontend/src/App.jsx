@@ -295,7 +295,7 @@ export default function App() {
               <div
                 className={`rail-card ${selectedPromo === p ? "selected" : ""}`}
                 key={`${p.episode}-${idx}`}
-                onClick={() => handleSelectPromo(p)}
+                onClick={() => canvasRef.current?.focusPromo(p)}
               >
                 <div className="rail-top">
                   <span className="rail-ep">EP{p.episode}</span>
