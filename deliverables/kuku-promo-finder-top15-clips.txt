@@ -1,0 +1,468 @@
+======================================================================
+KUKU PROMO FINDER  -  TOP 15 PROMO CLIPS
+Source: "I Married a Broken Soldier. He was a Duke" (50-episode script set)
+Each clip is a ready-to-trim promo window. Use the EPISODE number and the
+START / END timestamps (mm:ss.ss, as in the source scripts) to cut it.
+======================================================================
+
+#1  |  EPISODE 38  |  SCORE 100/100  |  36.2s
+    TRIM:  00:47.80  ->  01:24.00   (Episode 38)
+    HOOK:        What if I never see you again?
+    CLIFFHANGER: Alexander...
+    WHY (AI):    The clip builds emotional stakes through Juliana's resolve and ends on the realization of the wedding bells, perfectly teasing the imminent execution without resolving the outcome.
+    ----- clip script (original timestamps) -----
+    [00:47.80-00:50.50] DIALOGUE JULIANA (Heartbroken): What if I never see you again?
+    [00:48.50-00:51.00] ACTION: A heavy tear drips down from her jaw, falling into the dark dampness below.
+    [00:51.00-00:55.50] CAMERA: Medium close-up profile of Juliana closing her eyes, drawing a deep breath to steady herself.
+    [00:51.50-00:53.50] DIALOGUE JULIANA (Fervent Prayer): Keep him safe.
+    [00:53.80-00:55.30] DIALOGUE JULIANA (Resigned): Wherever he is.
+    [00:55.50-01:00.50] CAMERA: Frontal medium shot of Juliana kneeling upright, her right hand pressed firmly over her heart, her posture transforming into quiet dignity.
+    [00:55.50-00:57.00] DIALOGUE JULIANA (Determined): Let him live.
+    [00:57.50-01:00.50] DIALOGUE JULIANA (Steely): And if I have only one thing left to give...
+    [01:00.50-01:04.00] CAMERA: Tight close-up of Juliana turning toward the cell wall, her blue eyes flashing with fierce loyalty.
+    [01:00.80-01:02.50] DIALOGUE JULIANA (Defiant, Unshakable): I will not give them my husband.
+    [01:02.80-01:04.20] DIALOGUE JULIANA (Resolute): I will not betray him.
+    [01:04.00-01:07.00] CAMERA: Extreme close-up of Juliana's closed eyelids as she takes a sharp, startled breath.
+    [01:04.50-01:06.50] ACTION: Juliana's eyes snap wide open in sudden realization as a deep resonant toll reverberates from above.
+    [01:04.80-01:27.00] SOUND_FX: Solemn, resonant church bells begin tolling rhythmically from the cathedral above, echoing deep into the stone dungeon.
+    [01:07.00-01:10.50] CAMERA: Low-angle shot looking up past Juliana kneeling on the wet floor toward the barred iron skylight above her cell.
+    [01:09.00-01:10.30] DIALOGUE JULIANA (Startled Whisper): Bells.
+    [01:10.50-01:12.50] CAMERA: Wide tracking shot as Juliana scrambles to her feet, chains clinking loudly against her skirts.
+    [01:11.00-01:13.50] ACTION: Juliana rushes toward the front of the cell, clutching the iron bars with both hands.
+    [01:12.50-01:18.50] CAMERA: Medium profile shot of Juliana gripping the heavy iron bars, gazing down the corridor toward the source of the sound.
+    [01:12.80-01:14.20] DIALOGUE JULIANA (Realizing): The wedding.
+    [01:14.50-01:15.80] DIALOGUE JULIANA (Grim): It's beginning.
+    [01:16.00-01:18.50] DIALOGUE JULIANA (Somber, Steely): Then I suppose I'm next.
+    [01:18.50-01:24.50] CAMERA: Close-up between the vertical iron bars framed directly on Juliana's face. The terror in her eyes softens into an unexpected, brave smile of enduring faith.
+    [01:21.00-01:24.00] ACTION: Juliana grips the bars tightly, her lips curving into a warm, defiant smile as she whispers her husband's name.
+    [01:22.50-01:24.00] DIALOGUE JULIANA (Hopeful, Tender): Alexander...
+
+----------------------------------------------------------------------
+
+#2  |  EPISODE 18  |  SCORE 93/100  |  40.7s
+    TRIM:  02:25.80  ->  03:06.50   (Episode 18)
+    HOOK:        Why would anyone do this?
+    CLIFFHANGER: What are you going to do?
+    WHY (AI):    It captures the immediate aftermath of the arson and ends on Juliana's question about Alexander's next move, leaving the specific plan for vengeance as a mystery.
+    ----- clip script (original timestamps) -----
+    [02:25.80-02:28.50] DIALOGUE JULIANA (Voice Breaking, Anguished): Why would anyone do this?
+    [02:33.20-02:34.80] DIALOGUE JULIANA (Whispering, Tearful): Alexander...
+    [02:35.00-02:41.00] ACTION: Alexander draws her firmly into his arms, wrapping both burly arms around her as she buries her face into his shoulder, weeping uncontrollably.
+    [02:38.00-02:40.80] DIALOGUE ALEXANDER (Cold, Ominous): Someone wanted us out.
+    [02:43.00-02:45.50] DIALOGUE JULIANA (Despairing, Weeping): We have nowhere to go.
+    [02:45.50-02:51.00] CAMERA: Slow push-in on Alexander's face over Juliana's shoulder. His expression hardens into a mask of pure, lethal fury.
+    [02:51.00-02:59.50] CAMERA: Extreme close-up of Alexander's piercing eyes and combat scar bathed in the flickering orange glow of the fire.
+    [02:51.80-02:57.20] DIALOGUE ALEXANDER (Cold Fury, Resolute): They took our home. I will not let them take anything else now.
+    [02:59.50-03:04.00] ACTION: Juliana slowly pulls back slightly from his embrace, her tear-filled blue eyes looking up into his hardened features.
+    [03:04.20-03:06.50] DIALOGUE JULIANA (Trembling, Apprehensive): What are you going to do?
+
+----------------------------------------------------------------------
+
+#3  |  EPISODE 1  |  SCORE 90/100  |  35.0s
+    TRIM:  00:35.40  ->  01:10.40   (Episode 1)
+    HOOK:        Why are you holding her hand?
+    CLIFFHANGER: And you knew?
+    WHY (AI):    It delivers the high-impact betrayal at the altar and ends on Juliana's horrified realization of her sister's complicity, creating a strong emotional hook for the next episode.
+    ----- clip script (original timestamps) -----
+    [00:35.40-00:37.70] DIALOGUE LADY JULIANA (Heartbroken): Why are you holding her hand?
+    [00:36.50-00:39.00] CAMERA: Close-up insert of Gerald's fingers firmly interlocked with the white-gloved hand of the Lady in Gold Gown.
+    [00:39.00-00:41.50] CAMERA: Close-up on the Lady in Gold Gown beaming with cruel triumph.
+    [00:39.10-00:41.20] DIALOGUE LADY IN GOLD GOWN (Gloating, Smug): Because he is marrying me.
+    [00:41.50-00:43.90] CAMERA: Close-up on Juliana as tears spill over her eyelashes.
+    [00:41.70-00:43.10] DIALOGUE LADY JULIANA (Gasping, Devastated): No...
+    [00:43.90-00:46.80] CAMERA: Wide profile shot showing Juliana standing below the altar platform, looking up at Gerald and her sister.
+    [00:46.80-00:50.40] CAMERA: Close-up on Juliana clutching her chest, her sorrow turning into burning outrage.
+    [00:46.80-00:50.00] DIALOGUE LADY JULIANA (Outraged, Accusing): You knew this before I walked through those doors!
+    [00:50.40-00:52.00] CAMERA: Medium shot of Gerald standing stoic and impassive next to the smug Lady in Gold Gown.
+    [00:52.00-00:54.60] CAMERA: Close-up on Juliana's hands desperately clenching fistfuls of her white dress fabric.
+    [00:52.80-00:54.60] DIALOGUE LADY JULIANA (Choking on Tears): You let me come here...
+    [00:54.60-00:57.60] CAMERA: Close-up on Juliana's tear-streaked face as she shakes with grief.
+    [00:54.70-00:56.90] DIALOGUE LADY JULIANA (Crushed, Shaking): You let me dress in my mother's gown...
+    [00:57.00-01:00.00] DIALOGUE LADY JULIANA (Crying Out): You let me believe I was walking toward my husband!
+    [00:57.60-01:00.10] CAMERA: Medium shot on Gerald stepping forward, cold and indifferent, with the Lady in Gold Gown lingering in soft focus behind him.
+    [01:00.10-01:03.00] CAMERA: Tight close-up on Gerald's hardened profile as he glances down.
+    [01:00.10-01:01.80] DIALOGUE THE FORMER GROOM (Cold, Callous): I changed my mind.
+    [01:03.00-01:06.00] CAMERA: Extreme close-up on Juliana's furious, weeping face.
+    [01:03.40-01:05.60] DIALOGUE LADY JULIANA (Betrayed, Piercing): You swore you loved me!
+    [01:06.00-01:08.80] CAMERA: Close-up on the Lady in Gold Gown smiling condescendingly.
+    [01:06.50-01:08.80] DIALOGUE LADY IN GOLD GOWN (Mocking): People change their minds, sister.
+    [01:08.80-01:12.40] CAMERA: Medium profile shot of the Lady in Gold Gown turning her head subtly toward Gerald with satisfied malice.
+    [01:09.10-01:10.40] DIALOGUE LADY JULIANA (Horrified): And you knew?
+
+----------------------------------------------------------------------
+
+#4  |  EPISODE 36  |  SCORE 87/100  |  50.3s
+    TRIM:  02:26.50  ->  03:16.80   (Episode 36)
+    HOOK:        What wedding?
+    CLIFFHANGER: ...their dead Duke is coming home.
+    WHY (AI):    The clip establishes the ticking clock of the wedding and execution, ending on Alexander's chilling 'Two days' line which promises a rescue attempt without showing it.
+    ----- clip script (original timestamps) -----
+    [02:26.50-02:28.00] DIALOGUE ALEXANDER (Cold, Menacing): What wedding?
+    [02:28.50-02:32.00] CAMERA: Profile close-up of his mother looking at him across the lantern light.
+    [02:28.80-02:31.50] DIALOGUE ALEXANDER'S MOTHER (Grim): Rupert... and Catherine's.
+    [02:30.50-02:33.00] SOUND_FX: A sudden dramatic metallic swell underscores the impending deadline.
+    [02:32.00-02:36.50] CAMERA: Frontal close-up on his mother, solemn and resolute in her warning.
+    [02:33.50-02:36.00] DIALOGUE ALEXANDER'S MOTHER (Deadly Serious): Two days from now.
+    [02:36.50-02:40.00] CAMERA: Profile shot of Alexander as dark realization settles over his face, turning to a grim, predatory glare.
+    [02:36.80-02:39.80] DIALOGUE ALEXANDER (Simmering with Fury): They are marrying in two days...
+    [02:40.00-02:43.00] CAMERA: Tight, terrifying close-up on Alexander's eyes flashing with murderous wrath.
+    [02:40.50-02:43.00] DIALOGUE ALEXANDER (Deadly, Throaty): ...and killing my wife afterward.
+    [02:43.00-02:47.00] CAMERA: Medium shot as his mother urgently grabs Alexander's coat, pleading with him.
+    [02:43.20-02:46.80] DIALOGUE ALEXANDER'S MOTHER (Pleading, Terrified): Alexander, you cannot go back there alone!
+    [02:47.00-02:51.00] CAMERA: Close-up on Alexander, towering over her, immovable and consumed by purpose.
+    [02:48.50-02:50.80] DIALOGUE ALEXANDER (Grave, Seething): They already took my name.
+    [02:51.00-02:54.00] CAMERA: Close-up on Alexander stepping forward, his voice rising with lethal thunder.
+    [02:51.60-02:53.60] DIALOGUE ALEXANDER (Roaring with Conviction): They stole my home!
+    [02:54.00-02:57.00] CAMERA: Tight close-up on his furious, bared teeth and wild eyes.
+    [02:54.20-02:56.80] DIALOGUE ALEXANDER (Venomous): And now they have taken Juliana!
+    [02:57.00-02:59.50] ACTION: Close-up of Alexander's gloved hand clenching into a tight, leather-creaking fist.
+    [02:57.50-02:59.20] SOUND_FX: The sharp, taut creak of leather straining under monstrous grip strength.
+    [02:59.50-03:04.00] CAMERA: Tracking shot following Alexander as he turns his back on the warmth of the cabin and walks boldly toward the open double barn doors.
+    [03:00.00-03:04.00] ACTION: Alexander stands framed in the doorway, staring out into the vast, snow-covered pine forest under the cold moonlight.
+    [03:02.00-03:03.50] DIALOGUE ALEXANDER (Calm, Chilling): Two days.
+    [03:04.00-03:08.00] CAMERA: Medium shot from inside the cabin, showing his mother clutching her chest, looking after Alexander's imposing silhouette standing at the threshold of the blizzard.
+    [03:04.50-03:07.80] DIALOGUE ALEXANDER (Vow of Vengeance): Then they have two days to celebrate.
+    [03:08.00-03:12.50] CAMERA: Side profile close-up on Alexander as his breath fogs into the icy winter night air, his jaw clenched tight.
+    [03:09.50-03:12.20] DIALOGUE ALEXANDER (Low, Menacing Promise): Because before that wedding begins...
+    [03:12.50-03:20.75] CAMERA: Tight side profile close-up of Alexander's battle-scarred cheek and burning gaze as he makes his final declaration.
+    [03:13.00-03:16.80] DIALOGUE ALEXANDER (Cold, Thunderous Finale): ...their dead Duke is coming home.
+
+----------------------------------------------------------------------
+
+#5  |  EPISODE 1  |  SCORE 84/100  |  40.8s
+    TRIM:  01:36.20  ->  02:17.00   (Episode 1)
+    HOOK:        Embarrassed you?
+    CLIFFHANGER: ...when Clarissa is the true jewel of the county.
+    WHY (AI):    It escalates the humiliation with cruel dialogue from the family and groom, ending on Juliana's silent, clenched-fist reaction that implies a coming reckoning.
+    ----- clip script (original timestamps) -----
+    [01:36.20-01:38.20] DIALOGUE LADY JULIANA (Incredulous): Embarrassed you?
+    [01:38.60-01:42.50] CAMERA: Medium shot of the Matriarch gesturing toward Clarissa, who stands elegantly in gold.
+    [01:38.80-01:41.50] DIALOGUE MATRIARCH (Haughty): Clarissa knows how to carry herself.
+    [01:41.60-01:45.00] DIALOGUE MATRIARCH (Proud): She has beauty, connections, and a future worth protecting.
+    [01:42.50-01:45.30] CAMERA: Medium profile two-shot of the Matriarch confronting Juliana face to face.
+    [01:45.30-01:47.40] CAMERA: Close-up on Juliana, demanding answers in spite of her humiliation.
+    [01:45.40-01:47.30] DIALOGUE LADY JULIANA (Raw, Painful): And I am what?
+    [01:47.40-01:50.00] CAMERA: Medium tracking shot showing the Lady in Gold Gown stepping past Juliana toward the center.
+    [01:47.50-01:50.80] DIALOGUE LADY IN GOLD GOWN (Viciously Calm): You are the daughter people tolerate because they have to.
+    [01:50.00-01:53.00] CAMERA: Close-up on Juliana absorbing the venomous words, her breathing shallow.
+    [01:51.10-01:53.00] DIALOGUE LADY IN GOLD GOWN (Gloating): I am the daughter they choose.
+    [01:53.00-01:55.20] CAMERA: Medium shot of the Lady in Gold Gown smiling warmly at Gerald beside the altar candles.
+    [01:53.30-01:55.70] DIALOGUE MATRIARCH (Firm): Clarissa is the jewel of this family.
+    [01:55.20-01:57.00] CAMERA: Close two-shot of the Matriarch and Juliana standing side by side in profile.
+    [01:57.00-01:59.50] CAMERA: Medium shot framing Juliana looking directly at Gerald, who towers over her coldly.
+    [01:57.00-01:59.00] DIALOGUE LADY JULIANA (Trembling, Dignified): So that is what I was worth to you?
+    [01:59.50-02:02.50] CAMERA: Close-up on Gerald's sharp jawline as he looks down at her without an ounce of remorse.
+    [01:59.80-02:02.30] DIALOGUE THE FORMER GROOM (Scornful, Hard): You have nothing to offer me anymore.
+    [02:02.50-02:04.20] CAMERA: Extreme close-up on Juliana's eye as a single tear rolls down her cheek.
+    [02:04.20-02:08.50] CAMERA: Full shot tracking Gerald as he turns his back on Juliana and walks back toward Clarissa and the altar.
+    [02:04.20-02:07.50] DIALOGUE THE FORMER GROOM (Arrogant, Dismissive): I cannot marry a woman of such plainness and low value...
+    [02:08.50-02:11.30] CAMERA: Close-up on Clarissa's radiant, conceited smile basking in Gerald's words.
+    [02:08.50-02:11.20] DIALOGUE THE FORMER GROOM (Reverent toward Clarissa): ...when Clarissa is the true jewel of the county.
+    [02:11.30-02:13.80] ACTION: Juliana's hand clenches fiercely into the folds of her mother's silk bridal gown, knuckles whitening with suppressed fury.
+    [02:11.30-02:13.80] CAMERA: Tight insert on Juliana's white-knuckled hand clutching the gown fabric.
+    [02:13.80-02:17.00] CAMERA: Push-in close-up on Juliana's tearful face. Her trembling mouth straightens, her tear-filled blue eyes hardening from sheer devastation into cold, resolute defiance.
+    [02:13.80-02:17.00] ACTION: Juliana breathes through the agony, refusing to break down further in front of the congregation.
+
+----------------------------------------------------------------------
+
+#6  |  EPISODE 25  |  SCORE 84/100  |  26.0s
+    TRIM:  00:07.80  ->  00:33.80   (Episode 25)
+    HOOK:        Why are you walking like that?
+    CLIFFHANGER: Who?
+    WHY (AI):    It highlights the physical evidence of the poisoning and Alexander's fury, ending on a demand for the culprit's name that the viewer does not yet know.
+    ----- clip script (original timestamps) -----
+    [00:07.80-00:09.60] DIALOGUE ALEXANDER (Concerned, Suspicious): Why are you walking like that?
+    [00:08.50-00:13.20] CAMERA: Medium close-up of Juliana clutching the collar of her cloak with trembling fingers.
+    [00:10.20-00:12.80] DIALOGUE JULIANA (Deflective, Breathless): I am tired. That is all.
+    [00:13.20-00:16.00] ACTION: Alexander steps forward and reaches out, his gloved hand firmly grasping her left shoulder. Juliana winces sharply and gasps in sudden pain.
+    [00:13.20-00:16.20] CAMERA: Two-shot profile of Alexander grabbing Juliana's shoulder as she recoils.
+    [00:14.90-00:16.10] DIALOGUE ALEXANDER (Sharp, Alarmed): You're hurt.
+    [00:16.20-00:18.80] CAMERA: Close-up of Juliana gritting her teeth against the pain, shaking her head.
+    [00:16.80-00:18.50] DIALOGUE JULIANA (Strained, Minimizing): It is nothing.
+    [00:18.80-00:22.50] ACTION: Alexander's gloved fingers pull back the torn fabric of her cloak and sleeve, revealing a raw, bloody welt slashing across her bare shoulder.
+    [00:18.80-00:22.80] CAMERA: Tight close-up of the fresh riding-crop laceration cut across Juliana's shoulder.
+    [00:22.80-00:25.80] CAMERA: Close-up of Alexander's scarred face darkening with volatile fury, his jaw tightening.
+    [00:24.00-00:25.50] DIALOGUE ALEXANDER (Seething, Dangerous): Who did this?
+    [00:25.80-00:29.80] CAMERA: Medium close-up of Juliana averting her eyes, her head bowed in quiet resignation.
+    [00:27.50-00:29.30] DIALOGUE JULIANA (Subdued, Weary): It does not matter.
+    [00:29.80-00:32.80] CAMERA: Tight shot of Alexander, his eyes burning with intense anger.
+    [00:32.80-00:34.50] ACTION: Alexander steps directly into her space, firmly taking her hand in his.
+    [00:32.80-00:33.80] DIALOGUE ALEXANDER (Demanding, Stern): Who?
+
+----------------------------------------------------------------------
+
+#7  |  EPISODE 42  |  SCORE 74/100  |  28.7s
+    TRIM:  00:11.20  ->  00:39.90   (Episode 42)
+    HOOK:        Who are you?
+    CLIFFHANGER: Alexander...
+    WHY (AI):    The clip explicitly reveals Alexander's identity and his confrontation with Rupert, resolving the central mystery of his return rather than teasing it.
+    ----- clip script (original timestamps) -----
+    [00:11.20-00:12.60] DIALOGUE BLOND NOBLEMAN (Shocked, Trembling): Who are you?
+    [00:12.80-00:14.60] DIALOGUE ALEXANDER (Low, Resonant): You already know.
+    [00:14.60-00:16.60] CAMERA: Close-up on Juliana, her manacled hands clutching at her smock as tears well in her eyes.
+    [00:15.00-00:16.40] DIALOGUE JULIANA (Breathless, Tearful Whisper): Alexander...
+    [00:16.60-00:17.90] CAMERA: Close-up on Alexander, his gaze softening momentarily toward her.
+    [00:16.80-00:17.90] DIALOGUE ALEXANDER (Gentle, Reassuring): Juliana.
+    [00:17.90-00:21.50] CAMERA: Medium shot of Rupert descending the altar steps, furiously pointing toward Alexander.
+    [00:18.00-00:21.20] DIALOGUE BLOND NOBLEMAN (Furious, Hysterical): Guards! Arrest this imposter!
+    [00:21.50-00:23.40] CAMERA: Medium shot of the royal guardsman standing rigidly in red uniform and bearskin cap, resting his white-gloved hand on his sabre.
+    [00:22.00-00:23.40] DIALOGUE ROYAL GUARD (Stoic, Defiant): We will not.
+    [00:23.40-00:26.50] CAMERA: Close-up on Rupert, veins bulging in his neck as his composure shatters.
+    [00:23.50-00:25.20] DIALOGUE BLOND NOBLEMAN (Screaming, Outraged): I said arrest him!
+    [00:25.50-00:26.50] DIALOGUE BLOND NOBLEMAN (Desperate, Unhinged): Why?!
+    [00:26.50-00:28.80] CAMERA: Close-up on the Royal Guard holding his upright blade with unwavering conviction.
+    [00:26.70-00:28.80] DIALOGUE ROYAL GUARD (Firm, Reverent): Because we know who he is.
+    [00:28.80-00:30.40] CAMERA: Medium shot of Catherine clutching her father's arm, her bridal bouquet drooping as panic seizes her face.
+    [00:29.00-00:30.30] DIALOGUE CATHERINE (Trembling, Apprehensive): Rupert...
+    [00:30.40-00:33.80] CAMERA: Medium close-up of Rupert gripping the edge of a pew for balance, his eyes wild with terror.
+    [00:30.50-00:33.80] DIALOGUE BLOND NOBLEMAN (Denial, Shaken): You cannot be him. Alexander died!
+    [00:33.80-00:39.90] CAMERA: Wide tracking shot behind Alexander as he advances down the center aisle, silhouetted against the ruins of the cathedral nave.
+
+----------------------------------------------------------------------
+
+#8  |  EPISODE 45  |  SCORE 73/100  |  28.6s
+    TRIM:  00:22.90  ->  00:51.50   (Episode 45)
+    HOOK:        You're the Duke?
+    CLIFFHANGER: Alexander...
+    ----- clip script (original timestamps) -----
+    [00:22.90-00:24.40] DIALOGUE JULIANA (Shocked, Wondering): You're the Duke?
+    [00:24.50-00:27.20] CAMERA: Close-up on Alexander looking intensely into her eyes.
+    [00:24.60-00:27.40] DIALOGUE ALEXANDER (Firm, Resonant): Alexander Ashburton. The rightful Duke of Ashburton.
+    [00:27.20-00:29.80] CAMERA: Close-up on Juliana, tears of awe spilling over her cheeks.
+    [00:27.60-00:29.60] DIALOGUE JULIANA (Incredulous, Moved): All this time?
+    [00:29.80-00:35.80] CAMERA: Close-up two-shot as Alexander tenderly cradles Juliana's cheek in his gloved hand.
+    [00:30.20-00:33.00] DIALOGUE ALEXANDER (Tender, Deep): You chose me when you believed I was nobody.
+    [00:33.20-00:34.90] DIALOGUE JULIANA (Sincere, Loving): I chose you because you were kind.
+    [00:35.10-00:36.80] DIALOGUE ALEXANDER (Low, Passionate): You chose me when I had nothing.
+    [00:35.80-00:38.50] CAMERA: Medium shot framed between them as Alexander holds her face with both hands, the crowd watching in stunned silence.
+    [00:37.00-00:38.70] DIALOGUE JULIANA (Resolute, Warm): I chose you because you had honor.
+    [00:38.50-00:42.00] CAMERA: Tight close-up on Alexander looking deep into Juliana's blue eyes.
+    [00:38.80-00:41.80] DIALOGUE ALEXANDER (Earnest, Devoted): And I chose you because you saw the man before the title.
+    [00:42.00-00:48.90] CAMERA: Extreme close-up as Alexander and Juliana rest their foreheads and noses together in an intimate embrace.
+    [00:42.20-00:48.50] ACTION: Alexander and Juliana close their eyes, breathing together with their foreheads pressed gently against one another.
+    [00:43.80-00:46.00] DIALOGUE JULIANA (Soft, Heartfelt): I loved you before I ever knew who you were.
+    [00:46.10-00:48.80] DIALOGUE ALEXANDER (Soft, Vowing): And I loved you before I ever dared to tell you.
+    [00:48.90-00:51.80] CAMERA: Medium shot as Alexander turns back toward the altar, where Catherine stands in her disheveled wedding gown.
+    [00:49.00-00:51.50] ACTION: Catherine takes a desperate step forward, clutching her skirts and weeping.
+    [00:49.80-00:51.50] DIALOGUE CATHERINE (Pleading, Desperate): Alexander...
+
+----------------------------------------------------------------------
+
+#9  |  EPISODE 3  |  SCORE 72/100  |  38.8s
+    TRIM:  00:42.10  ->  01:20.90   (Episode 3)
+    HOOK:        Leave where?
+    CLIFFHANGER: I said...
+    ----- clip script (original timestamps) -----
+    [00:42.10-00:43.30] DIALOGUE LADY JULIANA (Disbelieving): Leave where?
+    [00:43.30-00:45.90] CAMERA: Medium shot of the Noble Matriarch looking down her nose in disdain.
+    [00:43.40-00:46.00] DIALOGUE NOBLE MATRIARCH (Cruel, Scornful): Wherever a discarded daughter belongs.
+    [00:45.90-00:48.80] CAMERA: Low-angle close-up focusing on Juliana's neck as her fingers desperately clutch the oval locket.
+    [00:46.40-00:48.60] DIALOGUE LADY JULIANA (Fierce, Choked): This is my mother's church.
+    [00:48.80-00:51.20] CAMERA: Close-up on Juliana's face, teeth clenched in desperate defiance.
+    [00:48.90-00:51.10] DIALOGUE LADY JULIANA (Defiant, Firm): I have every right to stand here.
+    [00:51.20-00:53.00] CAMERA: Tight close-up of the Noble Matriarch leaning in with vicious delight.
+    [00:51.30-00:53.00] DIALOGUE NOBLE MATRIARCH (Venomous): Not anymore.
+    [00:53.00-00:56.20] CAMERA: Medium shot on the Noble Matriarch gesturing expansively to the filled cathedral nave behind her.
+    [00:53.30-00:56.20] DIALOGUE NOBLE MATRIARCH (Stern, Final): Your father has chosen his family...
+    [00:56.20-00:58.20] CAMERA: Close-up profile of the Noble Matriarch's piercing eyes glaring directly at Juliana.
+    [00:56.30-00:58.20] DIALOGUE NOBLE MATRIARCH (Coldly Severing): ...and it isn't you.
+    [00:58.20-00:59.80] ACTION: The Noble Matriarch turns sharply toward the back of the chapel and barks an order.
+    [00:58.30-01:00.00] DIALOGUE NOBLE MATRIARCH (Shouting, Imperious): Guards! Remove her!
+    [01:00.00-01:02.00] CAMERA: Medium shot as two royal guards in red uniforms and bearskin caps step in behind Juliana and seize her arms.
+    [01:00.50-01:02.50] ACTION: The guards forcefully grab Juliana by both shoulders and drag her backwards.
+    [01:00.60-01:02.30] DIALOGUE LADY JULIANA (Screaming, Resisting): Let me go!
+    [01:02.00-01:03.20] CAMERA: Close-up of Juliana's hand frantically grabbing the wooden rim of a pew, knuckles white with strain.
+    [01:02.40-01:03.50] DIALOGUE LADY JULIANA (Desperate, Begging): Please! Someone!
+    [01:03.00-01:04.50] ACTION: The guards tear her grip away from the pew.
+    [01:03.00-01:04.50] SOUND_FX: Muffled scuffle, rustle of heavy silk and frantic gasps echoing off cathedral stone.
+    [01:04.50-01:06.00] CAMERA: High wide shot down the vaulted cathedral aisle showing the entire congregation watching in stunned silence as the guards drag Juliana.
+    [01:06.00-01:08.10] CAMERA: Wide eye-level shot looking down the petal-strewn marble aisle. A tall, rugged man in a worn dark trench coat—The Bearded Stranger—emerges into the center of the nave.
+    [01:06.00-01:08.10] ACTION: The Bearded Stranger steps deliberately into the aisle, his heavy boots echoing.
+    [01:08.10-01:10.50] CAMERA: Close-up on the Noble Matriarch freezing in utter shock and outrage.
+    [01:09.90-01:12.10] DIALOGUE THE BEARDED STRANGER (Low, Thunderous, Imposing): Take your hands off her.
+    [01:10.50-01:12.80] CAMERA: Medium tracking shot front-on as The Bearded Stranger marches down the flower-strewn aisle with resolute purpose.
+    [01:12.80-01:15.10] CAMERA: Medium shot on the Noble Matriarch stepping forward on the altar steps, furiously pointing a finger at him.
+    [01:13.00-01:16.80] DIALOGUE NOBLE MATRIARCH (Indignant, Screeching): And who are you to give orders in my family's chapel?!
+    [01:15.10-01:17.00] CAMERA: High wide shot of the magnificent vaulted hall as The Bearded Stranger walks steadily forward, dwarfing the aisle.
+    [01:17.00-01:19.00] CAMERA: Medium shot on the lead royal guard squaring his shoulders, barring the stranger's advance while Juliana stands behind him.
+    [01:17.20-01:18.90] DIALOGUE ROYAL GUARD (Aggressive, Threatening): Stand aside, stranger!
+    [01:19.00-01:21.00] CAMERA: Medium close-up profile on The Bearded Stranger, eyes burning with quiet, lethal resolve.
+    [01:19.30-01:20.90] DIALOGUE THE BEARDED STRANGER (Quiet, Deadly): I said...
+
+----------------------------------------------------------------------
+
+#10  |  EPISODE 16  |  SCORE 71/100  |  33.3s
+    TRIM:  00:42.50  ->  01:15.80   (Episode 16)
+    HOOK:        Who sent you?
+    CLIFFHANGER: Are you hurt?
+    ----- clip script (original timestamps) -----
+    [00:42.50-00:44.00] DIALOGUE ALEXANDER (Demanding, Threatening): Who sent you?
+    [00:44.20-00:46.20] CAMERA: Close-up of the Thug with Cap gagging under Alexander's iron fist.
+    [00:44.20-00:45.30] DIALOGUE THUG WITH CAP (Choking, Defiant): No one!
+    [00:46.20-00:48.50] CAMERA: Close-up of Alexander, his eyes darkening with lethal fury.
+    [00:46.30-00:47.40] DIALOGUE ALEXANDER (Cold, Ominous): Wrong answer.
+    [00:48.00-00:50.00] ACTION: Alexander tightens his grip on the thug's throat, lifting him higher against the stone wall.
+    [00:48.80-00:49.60] DIALOGUE ALEXANDER (Roaring): Who?!
+    [00:49.80-00:52.80] CAMERA: Extreme close-up of the terrified thug gasping for air, his eyes bulging.
+    [00:49.80-00:52.20] DIALOGUE THUG WITH CAP (Screaming, Panicked): Harrington! Gerald Harrington paid us!
+    [00:52.80-00:55.20] CAMERA: Close-up of Juliana on the ground, reeling in devastated disbelief as the betrayal hits her.
+    [00:53.20-00:54.40] DIALOGUE JULIANA (Shaken, Heartbroken): Gerald...
+    [00:55.20-00:59.00] CAMERA: Medium wide shot as Alexander releases the thug, sending him tumbling into the ruined flowerbeds.
+    [00:55.50-00:58.50] ACTION: The Thug with Cap scrambles to his feet and sprints into the dark woods alongside his two limping accomplices.
+    [00:56.00-00:58.20] DIALOGUE THUG WITH CAP (Shouting, Retreating): We were only paid to destroy the garden, that's all!
+    [00:59.00-01:03.00] CAMERA: Close-up on Alexander's hand hanging by his coat. Fresh blood trickles from his split knuckles, and he slowly curls his fingers into a tight fist.
+    [01:00.00-01:03.00] ACTION: Alexander flexes his bleeding hand, showing no sign of pain.
+    [01:03.00-01:06.50] CAMERA: Medium shot as Juliana gingerly rises to her feet, stepping toward Alexander with deep awe and wonder in her eyes.
+    [01:04.20-01:06.20] DIALOGUE JULIANA (Soft, Astounded): You knew exactly what to do.
+    [01:06.50-01:10.50] CAMERA: Close-up of Juliana looking up at him, searching his scarred face.
+    [01:07.80-01:10.20] DIALOGUE JULIANA (Wondering, Intrigued): You fought like you've done this a hundred times.
+    [01:10.50-01:14.20] CAMERA: Medium close-up of Alexander turning his profile away, shadowed by haunted memories of his past.
+    [01:11.00-01:14.00] DIALOGUE ALEXANDER (Somber, Heavy-Hearted): A soldier learns things he wishes he could forget.
+    [01:14.20-01:16.80] CAMERA: Close-up of Juliana softening with deep empathy as her eyes drop to his bleeding knuckle.
+    [01:14.80-01:15.80] DIALOGUE JULIANA (Tender, Concerned): Are you hurt?
+
+----------------------------------------------------------------------
+
+#11  |  EPISODE 44  |  SCORE 71/100  |  37.3s
+    TRIM:  00:09.10  ->  00:46.40   (Episode 44)
+    HOOK:        You have no authority!
+    CLIFFHANGER: You don't remember?
+    ----- clip script (original timestamps) -----
+    [00:09.10-00:11.20] DIALOGUE LORD STERLING (Snarls, Outraged): You have no authority!
+    [00:11.40-00:13.80] CAMERA: Close-up on the Constable's black-gloved hands holding out a thick, red-ribboned dossier stamped with the Crown's royal wax seal.
+    [00:11.40-00:13.20] DIALOGUE POLICE CONSTABLE (Cold, Definite): I have more than enough.
+    [00:13.80-00:16.40] CAMERA: Wide shot of the ruined nave littered with rubble as royal redcoat guards surround the aisle, forcing Rupert down onto his knees.
+    [00:14.00-00:16.40] ACTION: A royal redcoat guard firmly forces Rupert down into the stone dust.
+    [00:14.00-00:16.80] DIALOGUE BLOND NOBLEMAN (Frantic, Shouting): Get your hands off me! Catherine!
+    [00:16.40-00:19.40] CAMERA: Close-up on Rupert struggling fiercely against the white-gloved grip of the guard pinning his shoulder.
+    [00:17.40-00:19.30] DIALOGUE BLOND NOBLEMAN (Desperate, Screaming): Do something!
+    [00:19.40-00:22.00] CAMERA: Medium close-up on Catherine beneath her bridal veil, looking downward in conflicted silence.
+    [00:21.80-00:24.40] ACTION: Catherine's satin-gloved hand clenches tightly into a trembling fist against the folds of her ornate gown.
+    [00:22.00-00:24.40] CAMERA: Close-up on Catherine's gloved hand tightening into a fist.
+    [00:24.40-00:27.80] CAMERA: Wide shot as Catherine gathers her heavy train and steps away from Rupert, walking toward Alexander who stands watching her stoically.
+    [00:25.20-00:28.00] DIALOGUE CATHERINE (Shaken, Tearful): Alexander... I thought you had died.
+    [00:27.80-00:31.20] CAMERA: Close-up on Catherine's face, tears glistening in her eyes as grief breaks through her composure.
+    [00:28.40-00:31.00] DIALOGUE CATHERINE (Choked, Weeping): Do you know what this did to me?
+    [00:31.20-00:32.40] CAMERA: Medium shot on Alexander standing tall in his ducal coat, his gaze utterly detached.
+    [00:31.20-00:32.40] DIALOGUE CATHERINE (Pleading): I mourned you.
+    [00:32.40-00:34.00] CAMERA: Profile close-up of Catherine as a tear slips down her cheek.
+    [00:32.40-00:34.00] DIALOGUE CATHERINE (Vulnerable, Trembling): I waited for you.
+    [00:34.00-00:35.80] CAMERA: Medium shot of Catherine standing in the center of the aisle before the seated congregation.
+    [00:34.20-00:38.80] DIALOGUE CATHERINE (Heartbroken): For three years, I believed the man I loved was buried somewhere across the sea.
+    [00:35.80-00:38.80] CAMERA: Tracking two-shot over Alexander's shoulder as Catherine approaches him pleadingly.
+    [00:38.80-00:41.20] CAMERA: Close profile two-shot as Catherine gently reaches her gloved hand up to Alexander's bearded cheek.
+    [00:38.90-00:41.20] DIALOGUE CATHERINE (Whispering, Longing): I never stopped loving you.
+    [00:41.20-00:42.80] ACTION: Alexander abruptly pulls his face back, refusing her touch and leaving her hand suspended in mid-air.
+    [00:41.20-00:42.80] CAMERA: Close-up on Catherine's empty gloved hand trembling in the empty space between them.
+    [00:42.80-00:46.40] CAMERA: Close-up on Catherine lowering her hand, stunned and deeply hurt by his rejection.
+    [00:44.20-00:46.40] DIALOGUE CATHERINE (Breathless, Hurt): You don't remember?
+
+----------------------------------------------------------------------
+
+#12  |  EPISODE 4  |  SCORE 70/100  |  38.8s
+    TRIM:  01:24.00  ->  02:02.80   (Episode 4)
+    HOOK:        Are you certain?
+    CLIFFHANGER: I would rather choose my own life...
+    ----- clip script (original timestamps) -----
+    [01:24.00-01:25.80] DIALOGUE THE PRIEST (Tentative): Are you certain?
+    [01:26.00-01:28.80] CAMERA: Medium shot of Lord Ashcroft seated in his pew, gripping his cane, bowed in grim silence.
+    [01:28.80-01:31.50] CAMERA: Close-up profile of Juliana, her expression clear and unshakable.
+    [01:29.80-01:31.00] DIALOGUE JULIANA (Unwavering): I am.
+    [01:31.50-01:34.80] CAMERA: Medium close-up of the Priest swallowing hard and looking down at his book.
+    [01:32.00-01:34.50] DIALOGUE THE PRIEST (Resigned, Solemn): Then... let us proceed.
+    [01:34.80-01:37.80] CAMERA: Close two-shot of the Mysterious Bearded Man and Juliana gazing intimately into each other's eyes.
+    [01:35.80-01:38.00] DIALOGUE MYSTERIOUS BEARDED MAN (Low, Reassuring): You need not say anything you do not mean.
+    [01:37.80-01:40.20] CAMERA: Close-up of Juliana smiling softly up at him.
+    [01:38.20-01:40.00] DIALOGUE JULIANA (Warm, Sincere): I truly mean it.
+    [01:40.20-01:42.20] CAMERA: Close-up shot of his hands sliding the silver ring over her ring finger.
+    [01:40.20-01:42.20] ACTION: The Mysterious Bearded Man carefully slides the band onto Juliana's finger.
+    [01:42.20-01:45.00] CAMERA: Medium close-up of the Mysterious Bearded Man holding her hands tenderly.
+    [01:42.50-01:44.20] DIALOGUE MYSTERIOUS BEARDED MAN (Solemn): You have my protection.
+    [01:45.00-01:47.80] CAMERA: Tight shot of the warrior's face, his eyes full of devotion.
+    [01:45.20-01:47.00] DIALOGUE MYSTERIOUS BEARDED MAN (Steadfast): You have my respect.
+    [01:47.80-01:50.00] CAMERA: Extreme close-up of his intense gaze.
+    [01:47.80-01:49.80] DIALOGUE MYSTERIOUS BEARDED MAN (Grave): And you have my word.
+    [01:50.00-01:52.80] CAMERA: Medium three-shot with the Priest standing between them, raising both hands in blessing over their joined hands.
+    [01:50.00-01:53.00] DIALOGUE THE PRIEST (Ceremonial): By the authority entrusted to me, I now pronounce you...
+    [01:52.80-01:54.80] CAMERA: High wide establishing shot looking down from the ceiling vaults of the cathedral onto the altar.
+    [01:53.00-01:54.80] DIALOGUE THE PRIEST (Off-Screen, Booming): ...husband and wife!
+    [01:54.00-01:55.20] SOUND_FX: Dramatic musical chord swelling.
+    [01:54.80-01:56.80] CAMERA: Medium close-up of Gerald lunging forward, pointing an enraged finger.
+    [01:55.00-01:56.80] DIALOGUE GERALD (Furious, Shouting): You have thrown yourself away!
+    [01:56.80-01:59.00] CAMERA: Tight close-up of Gerald, face contorted in rage.
+    [01:57.00-01:59.00] DIALOGUE GERALD (Livid): For a penniless nobody!
+    [01:59.00-02:02.80] CAMERA: Medium two-shot of Juliana standing tall before Gerald in the chapel aisle, her husband standing guard behind her.
+    [02:00.50-02:02.80] DIALOGUE JULIANA (Calm, Cutting): I would rather choose my own life...
+
+----------------------------------------------------------------------
+
+#13  |  EPISODE 28  |  SCORE 70/100  |  31.6s
+    TRIM:  00:33.20  ->  01:04.80   (Episode 28)
+    HOOK:        Your Grace...
+    CLIFFHANGER: How convenient that the only person who can prove the poison exists...
+    ----- clip script (original timestamps) -----
+    [00:33.20-00:34.60] DIALOGUE JULIANA (Breathless, Relieved): Your Grace...
+    [00:34.90-00:37.70] CAMERA: Close-up of the Duchess clutching at her nightgown, her face twisted in mounting fury and horror.
+    [00:35.00-00:37.40] DIALOGUE DOWAGER DUCHESS (Trembling, Shouting): I know what happened to me!
+    [00:37.70-00:43.00] CAMERA: Medium low-angle shot past the Duchess pointing directly at Rupert, who stands rigid and expressionless.
+    [00:38.20-00:40.00] DIALOGUE DOWAGER DUCHESS (Fierce, Condemning): I was poisoned!
+    [00:40.30-00:42.20] DIALOGUE DOWAGER DUCHESS (Accusing): And you... you knew!
+    [00:43.00-00:47.40] CAMERA: Medium shot of the Duchess lunging forward from the pillows, gasping for breath as she points toward Catherine.
+    [00:43.60-00:45.30] DIALOGUE DOWAGER DUCHESS (Choking, Weakening): Catherine knew!
+    [00:45.60-00:47.00] DIALOGUE DOWAGER DUCHESS (Gasping): They have been—
+    [00:46.80-00:48.00] ACTION: The Duchess collapses back onto the pillows, coughing violently and clutching her chest.
+    [00:47.40-00:52.20] CAMERA: Wide shot as Juliana lunges across the room toward the bed, but the armed guard seizes her from behind and drags her back.
+    [00:48.20-00:49.70] DIALOGUE JULIANA (Panicked, Screaming): Let me help her!
+    [00:49.50-00:52.10] DIALOGUE JULIANA (Desperate): She's still weak, you cannot leave her like this!
+    [00:52.20-00:56.80] CAMERA: Medium close-up of Rupert smoothing down his black leather gloves, a chilling smile forming on his lips.
+    [00:52.80-00:53.60] DIALOGUE BLOND NOBLEMAN (Smooth, Feigning Concern): You see?
+    [00:54.00-00:56.60] DIALOGUE BLOND NOBLEMAN (Sinister): The poison has clearly damaged her mind.
+    [00:56.80-01:01.30] CAMERA: Over-the-shoulder shot of Rupert leaning menacingly over the gasping Duchess in bed.
+    [00:57.00-00:58.70] DIALOGUE DOWAGER DUCHESS (Hoarse, Straining): I am not delusional!
+    [00:58.60-01:00.00] DIALOGUE BLOND NOBLEMAN (Condescending, Whispering): Of course you are not.
+    [01:00.10-01:01.20] DIALOGUE BLOND NOBLEMAN (Dismissive): You are merely confused.
+    [01:01.30-01:06.80] CAMERA: Medium profile tracking shot of Catherine walking deliberately toward Juliana, speaking with airy cynicism.
+    [01:01.60-01:04.80] DIALOGUE CATHERINE (Amused, Mocking): How convenient that the only person who can prove the poison exists...
+
+----------------------------------------------------------------------
+
+#14  |  EPISODE 34  |  SCORE 70/100  |  32.1s
+    TRIM:  00:09.10  ->  00:41.20   (Episode 34)
+    HOOK:        Do you deny possessing this book?
+    CLIFFHANGER: Prudence. You served beside the accused?
+    ----- clip script (original timestamps) -----
+    [00:09.10-00:12.60] DIALOGUE JUDGE (Inquisitive, Severe): Do you deny possessing this book?
+    [00:13.10-00:15.50] CAMERA: Low-angle medium close-up of Lady Juliana standing erect in the dock, her prisoner label pinned to her rustic buttoned gown, her expression resolute.
+    [00:13.80-00:14.80] DIALOGUE LADY JULIANA (Calm, Unflinching): No.
+    [00:15.50-00:19.40] CAMERA: Low-angle medium shot of the Judge leaning over his elevated bench, staring down critically.
+    [00:15.60-00:19.20] DIALOGUE JUDGE (Stern, Accusatory): Do you deny using its remedies?
+    [00:19.40-00:23.80] CAMERA: Tight close-up of Lady Juliana's face, bruised cheekbone highlighting her calm defiance.
+    [00:20.80-00:21.80] DIALOGUE LADY JULIANA (Firm): No.
+    [00:23.80-00:27.40] CAMERA: Medium shot of the aristocratic Lord standing at the railing in his tailored dark coat, turning slowly with a smirk of malicious satisfaction.
+    [00:27.40-00:31.70] CAMERA: Close-up of the Judge leaning forward across his bench, eyes narrowing with grim conviction.
+    [00:27.50-00:31.20] DIALOGUE JUDGE (Hard, Pressing): Then you admit to practicing forbidden arts.
+    [00:31.70-00:35.30] CAMERA: Close-up of Lady Juliana looking upward with quiet dignity, her eyes luminous.
+    [00:33.20-00:35.10] DIALOGUE LADY JULIANA (Proud, Dignified): I admit to healing the sick.
+    [00:35.30-00:37.40] ACTION: The Judge furiously raises his wooden gavel and strikes the sound block with sharp force.
+    [00:35.40-00:36.60] DIALOGUE JUDGE (Furious, Shouting): Silence!
+    [00:35.80-00:37.00] SOUND_FX: [Sharp, echoing crack of the gavel slamming onto wood]
+    [00:35.80-00:37.40] CAMERA: Medium shot of the Judge slamming the gavel down on his bench.
+    [00:37.40-00:42.50] CAMERA: Tracking shot moving from the Judge on his bench as he points his outstretched arm across the courtroom floor toward the witness stand.
+    [00:37.50-00:41.20] DIALOGUE JUDGE (Commanding): Prudence. You served beside the accused?
+
+----------------------------------------------------------------------
+
+#15  |  EPISODE 36  |  SCORE 70/100  |  16.7s
+    TRIM:  00:00.80  ->  00:17.50   (Episode 36)
+    HOOK:        Then why did they never find you?
+    CLIFFHANGER: They gave you to the enemy?
+    WHY (AI):    The clip directly names the villains (Sterling and Rupert) who framed Alexander, revealing the key plot point that should be withheld for a promo.
+    ----- clip script (original timestamps) -----
+    [00:00.80-00:03.70] DIALOGUE ALEXANDER'S MOTHER (Whispering, Distraught): Then why did they never find you?
+    [00:04.20-00:08.50] CAMERA: Close-up on Alexander, his dark combat scar prominent as his eyes burn with steady, cold intensity.
+    [00:04.80-00:08.20] DIALOGUE ALEXANDER (Cold, Bitter): Because they made certain no one would look.
+    [00:08.50-00:12.80] CAMERA: Medium close-up on Alexander's mother, her hood framing her pale, weathered face as shock deepens across her features.
+    [00:09.50-00:11.20] DIALOGUE ALEXANDER'S MOTHER (Trembling): Who?
+    [00:12.80-00:17.50] CAMERA: Side profile shot of Alexander gazing toward the open doorway before slowly turning back to face his mother directly.
+
+----------------------------------------------------------------------

@@ -23,21 +23,81 @@ all 50 episodes to decide what to cut.
 - Hands the editor each top clip with its **episode number, original database
   timestamps, and full clip script** — ready to cut.
 
-## How to use it (step by step)
+---
 
-1. Open the live app (link above).
-2. Click **Run pipeline on 50 episodes**. It parses, scores, and ranks (a few
-   seconds).
-3. The radial map fills in. The **top 5 episodes** are ringed in orange and
-   numbered **#1–#5** — those hold the best clips.
-4. **Click a top-5 circle** to zoom into that episode. A card appears beside the
-   grid listing its clips with **timestamps** and **scores (0–100)**.
-5. **Click a glowing cell** to open that promo. The panel on the right shows the
-   clip's dialogue with original DB timestamps and the full score receipt
-   (`heuristic + AI = total`).
-6. Press **▶ Play** to watch the dialogue scroll through in sync.
-7. Use the **Ranked promos** rail (right) to jump to any clip; collapse either
-   sidebar with the `⟩⟩` buttons to see more of the map.
+## How to use it — step by step
+
+### Step 1 · Open the live app and click **Run pipeline on 50 episodes**
+
+A few seconds later the radial map fills in. Every one of the 50 episodes becomes
+a numbered ring (EP01–EP50) around the edge; the dots inside are scored 20–60s
+candidate windows. The **top-5 episodes by total score** are ringed in orange
+and numbered **#1–#5**, and the big **100 TOP SCORE** in the middle is EP38's
+winning clip — *"What if I never see you again?"*
+
+The right rail (**RANKED PROMOS**) lists every clip in score order, so you can
+jump straight to any of them.
+
+![Overview — 50 episodes, top-5 ringed, ranked promos rail on the right](docs/screenshots/01-overview-50-episodes.png)
+
+**What the HUD at the bottom-right is telling you:**
+
+| 50 | 3 727 | 20 | 100 |
+|---|---|---|---|
+| episodes parsed | script units | promos ranked | top score (EP38) |
+
+### Step 2 · Click a top-5 episode (or any ranked promo) to zoom in
+
+The map focuses on that episode, surrounding episodes slide into a vertical
+column, and the detail panel opens on the right. You can see the clip's
+**DB timestamps**, the dialogue of the clip **line by line in sync**, and the
+full **score receipt** underneath — every point the heuristic scorer awarded,
+then the AI judge's signed re-score, then the honest total.
+
+![Detail view — EP38, score 100, full receipt with heuristic + AI breakdown](docs/screenshots/02-detail-ep38-score-100.png)
+
+**Reading the receipt (EP38, the #1 clip):**
+
+| | |
+|---|---|
+| **Hook** | opens on a question `+12`, hook word `+6`, charged emotion `heartbroken` `+5`, direct address `you/your` `+5`, short punchy opener `+4` |
+| **Window** | emotional density (12 charged lines) `+12`, physical action beats `+4`, suspense sound cues `+4` |
+| **Cliff** | ends on trailing `…` `+12`, `cut to black` `+14`, suspense SFX `swell, silence` `+10` |
+| **Duration** | ideal length (~36s) `+5` |
+| **HEURISTIC** | **123** |
+| **+ AI judge** · strong / cliffhanger | **+21** |
+| **RAW TOTAL** | **144** |
+| **SCORE (normalized)** | **100 / 100** |
+
+The AI's one-line reason sits below the receipt (*"Builds intense emotional
+stakes through Juliana's prayer and ends on the sudden, ominous realization of
+the wedding bells, perfectly teasing the impending execution without resolving
+the tension."*) — and because the model marked `withholds_reveal: true`, Tier 3
+leaves the window as-is. When it marks `withholds_reveal: false`, Tier 3
+automatically **trims the window to end before the reveal line** so the clip
+keeps its pull.
+
+### Step 3 · Press ▶ Play and watch the clip scroll
+
+The dialogue panel scrolls through the clip's lines in real time, each line
+highlighted at its original DB timestamp. This is the editor's confidence check
+before they trim — "does it read as a promo?"
+
+### Step 4 · Take the trim timestamps straight to the DB
+
+The top of the detail panel shows the two numbers the editor needs:
+
+```
+DB timestamps:  00:47.80  →  01:24.00   in Episode 38
+```
+
+That's the full raw output. For a batch workflow, the pipeline also emits
+[`deliverables/kuku-promo-finder-top15-clips.txt`](deliverables/kuku-promo-finder-top15-clips.txt)
+— a plain text file (same shape as the input scripts) with every top clip's
+rank, episode, score, trim window, hook, cliffhanger, AI reason, and full clip
+script with original per-line timestamps. One copy-paste and cut.
+
+---
 
 ## Run locally
 
@@ -93,5 +153,7 @@ backend/
   dev_server.py   local server (script pipeline; AI judge reads .env)
 frontend/
   src/            React + Vite · Canvas2D radial map · players · receipt
+deliverables/     solution PDF + raw .txt output of top clips
+docs/screenshots/ README screenshots
 plans/            architecture decision records
 ```
